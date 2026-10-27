@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Desire's Cascade</title>
+  
+  <!-- PWA Setup -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff6b9e">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Title screen (Premium Redesign) -->
+    <section id="screen-title" class="screen active">
+      <div class="home-overlay">
+        
+        <div class="home-top-bar">
+          <div class="currency-pill">
+            <span class="currency-icon">🪙</span>
+            <span id="home-coins">0</span>
+            <button class="plus-btn" id="btn-coins-plus" aria-label="Open shop">+</button>
+          </div>
+          <button class="settings-btn" id="btn-settings" aria-label="Settings">⚙️</button>
+        </div>
+
+        <div class="title-logo">
+          <p class="title-small">Desire's</p>
+          <h1>Cascade</h1>
+        </div>
+
+        <div class="hero-portrait-frame">
+          <div class="hero-portrait" style="background-image: url('assets/desire.jpg');"></div>
+          <div class="portrait-fallback">👩🏾</div>
+          
+          <div class="level-badge">
+            <span class="badge-label">LEVEL</span>
+            <span class="badge-value" id="home-level">1</span>
+          </div>
+        </div>
+
+        <p class="subtitle">A game for you 💖</p>
+
+        <div class="home-bottom">
+          <button class="nav-btn" id="btn-map">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-text">Map</span>
+          </button>
+          
+          <button class="btn btn-play" id="btn-start">Play</button>
+          
+          <button class="nav-btn" id="btn-shop">
+            <span class="nav-icon">🛍️</span>
+            <span class="nav-text">Shop</span>
+          </button>
+        </div>
+        <button class="memories-home-btn" id="btn-memories">💌 Unlocked Memories</button>
+        <button class="memories-home-btn daily-btn" id="btn-daily" style="display:none">🎁 Daily Reward ready!</button>
+
+      </div>
+    </section>
+
+    <!-- Unlockable story memories -->
+    <section id="screen-memories" class="screen">
+      <button class="back-btn" id="btn-memories-back" aria-label="Back to title">✕</button>
+      <h2 class="map-title">Memory Album</h2>
+      <p class="subtitle">Little moments uncovered as you play.</p>
+      <div id="memories-container" class="memories-container"></div>
+    </section>
+
+    <!-- Map screen -->
+    <section id="screen-map" class="screen">
+      <button class="back-btn" id="btn-map-back" aria-label="Back to title">✕</button>
+      <h2 class="map-title">Adventure Map</h2>
+      <div id="map-container" class="map-container"></div>
+    </section>
+
+    <!-- Game screen -->
+    <section id="screen-game" class="screen">
+      <button class="back-btn" id="btn-pause" aria-label="Pause">☰</button>
+      
+      <div class="top-bar">
+        <div class="avatar-slot" style="background-image: url('assets/desire.jpg');">
+           <span class="avatar-fallback">👩🏾</span>
+        </div>
+        <div class="hud-panel">
+          <div class="hud-item">
+            <span class="hud-icon">🔄</span>
+            <span class="hud-value" id="hud-moves">20</span>
+          </div>
+        </div>
+        <div class="hud-panel goals-panel">
+          <div class="hud-item">
+            <span class="hud-label">Goal</span>
+            <span class="hud-value" id="hud-cleared">0/30</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="level-header">
+        <div class="level-name" id="level-name">Kiddo Wakes Up</div>
+      </div>
+      
+      <div class="board-wrapper">
+        <div id="board"></div>
+        <canvas id="swipe-canvas"></canvas>
+      </div>
+
+      <div class="booster-bar">
+        <button class="booster-btn" id="btn-hammer">
+          <span class="booster-icon">🔨</span>
+          <span class="booster-count" id="count-hammer">3</span>
+        </button>
+        <button class="booster-btn" id="btn-hint">
+          <span class="booster-icon">💡</span>
+          <span class="booster-count" id="count-hint">2</span>
+        </button>
+        <button class="booster-btn" id="btn-shuffle">
+          <span class="booster-icon">🔀</span>
+          <span class="booster-count" id="count-shuffle">2</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Shop -->
+    <section id="screen-shop" class="screen">
+      <button class="back-btn" id="btn-shop-back" aria-label="Back to title">✕</button>
+      <h2 class="map-title">Shop</h2>
+      <div class="shop-wallet"><span>🪙 <b id="shop-coins">0</b></span><span>💎 <b id="shop-gems">0</b></span><span>🔨 <b id="shop-hammers">0</b></span><span>🔀 <b id="shop-shuffles">0</b></span><span>💡 <b id="shop-hints">0</b></span></div>
+      <div id="shop-container" class="shop-container"></div>
+    </section>
+
+    <!-- Win screen -->
+    <section id="screen-win" class="screen">
+      <div class="win-avatar" style="background-image: url('assets/desire.jpg');"></div>
+      <p class="win-praise" id="win-praise"></p>
+      <div class="win-banner"><h1>Level<br>Complete!</h1></div>
+      <div class="star-row" id="win-stars"></div>
+      <div class="rewards-panel">
+        <div class="reward-item"><div class="reward-icon">🪙</div><span id="reward-coins">+50</span></div>
+        <div class="reward-item"><div class="reward-icon">💎</div><span id="reward-gems">+1</span></div>
+      </div>
+      <button class="btn btn-success" id="btn-next">Continue</button>
+    </section>
+
+    <!-- Chapter complete -->
+    <section id="screen-chapter" class="screen">
+      <div class="chapter-confetti" id="chapter-confetti"></div>
+      <p class="chapter-kicker" id="chapter-kicker">Chapter complete</p>
+      <div class="chapter-emoji" id="chapter-emoji">🌱</div>
+      <h1 class="chapter-title" id="chapter-title">Chapter</h1>
+      <p class="chapter-bonus" id="chapter-bonus"></p>
+      <p class="chapter-next" id="chapter-next"></p>
+      <button class="btn btn-success" id="btn-chapter-continue">Continue</button>
+    </section>
+
+    <!-- Message screen -->
+    <section id="screen-message" class="screen">
+      <div class="message-card">
+        <div class="message-from">A note for you</div>
+        <p class="message-text" id="message-text">…</p>
+      </div>
+      <button class="btn btn-primary" id="btn-message-continue">Continue</button>
+    </section>
+
+    <!-- Lose screen -->
+    <section id="screen-lose" class="screen">
+      <h1>Out of Moves</h1>
+      <p class="subtitle">Not quite — but you've got this.</p>
+      <button class="btn btn-success" id="btn-extra-moves" style="margin-bottom:14px">💎 3 → +5 moves</button>
+      <button class="btn btn-primary" id="btn-retry">Try Again</button>
+    </section>
+
+    <!-- Pause Modal -->
+    <div id="pause-modal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Paused</h2>
+        <p>Take a breather.</p>
+        <button class="btn btn-success" id="btn-resume" style="width: 100%; margin-bottom: 12px;">Resume</button>
+        <button class="btn btn-primary" id="btn-restart" style="width: 100%; margin-bottom: 12px;">Restart Level</button>
+        <button class="btn btn-map" id="btn-quit" style="width: 100%;">Quit to Map</button>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Settings</h2>
+        <button class="toggle-row" id="tg-sound"><span>🔊 Sound effects</span><b class="tg-state">On</b></button>
+        <button class="toggle-row" id="tg-music"><span>🎵 Music</span><b class="tg-state">On</b></button>
+        <button class="toggle-row" id="tg-vibrate"><span>📳 Vibration</span><b class="tg-state">On</b></button>
+        <button class="btn btn-map" id="btn-reset" style="width:100%;margin:14px 0 12px">Reset progress</button>
+        <button class="btn btn-success" id="btn-settings-close" style="width:100%">Done</button>
+      </div>
+    </div>
+
+    <!-- Daily Reward Modal -->
+    <div id="daily-modal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Daily Reward 🎁</h2>
+        <p id="daily-streak">Day 1</p>
+        <div class="daily-days" id="daily-days"></div>
+        <p id="daily-prize" class="daily-prize"></p>
+        <button class="btn btn-success" id="btn-daily-claim" style="width:100%">Claim</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="combo-popup" id="combo-popup"></div>
+
+  <script src="levels.js"></script>
+  <script src="messages.js"></script>
+  <script src="app.js"></script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

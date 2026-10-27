@@ -1,0 +1,17 @@
+{
+  "name": "Desire's Cascade",
+  "short_name": "Cascade",
+  "description": "A game made just for you.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1033",
+  "theme_color": "#ff6b9e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
