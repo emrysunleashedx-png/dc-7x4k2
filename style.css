@@ -1554,3 +1554,11 @@ button { font-family: inherit; }
 
 /* v3.1: keep the pause button clear of the goal panel */
 #screen-game #btn-pause { top: 6px; right: 12px; width: 34px; height: 34px; font-size: 14px; }
+
+
+/* ================= v3.2: bombs, combos, guide ================= */
+.tile.bomb { animation: bombPulse .55s ease-in-out infinite alternate; }
+@keyframes bombPulse { from { transform: scale(1); filter: brightness(1); } to { transform: scale(1.08); filter: brightness(1.25) drop-shadow(0 0 7px #ff8a65); } }
+.tile.bomb .rocket-arrow { color: #fff3e0; text-shadow: 0 0 6px #e64a19, 0 2px 0 #bf360c; font-size: 26px; }
+.guide-list { text-align: left; margin: 0 0 16px; padding: 0; list-style: none; font: 600 15px Fredoka, sans-serif; color: #633a62; }
+.guide-list li { margin-bottom: 9px; line-height: 1.3; }

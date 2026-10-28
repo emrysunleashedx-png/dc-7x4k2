@@ -219,5 +219,6 @@ const GOAL_TUNING = {
       l.collect = [{ gem: gemA, target: Math.max(5, Math.round(l.goal * GOAL_TUNING.collectShareTwo)) }];
       l.moves += GOAL_TUNING.iceBonusMoves;
     }
+    if (id > 110 && l.kind !== "clear") l.moves += 3;   // late-game breathing room
   });
 })();

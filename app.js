@@ -334,7 +334,7 @@ function randomBoard() {
   }
 }
 
-// Cell values: 0-4 normal gem | 100+t row rocket | 300+t column rocket | 200 rainbow
+// Cell values: 0-4 normal gem | 100+t row rocket | 300+t column rocket | 400+t bomb (3x3) | 200 rainbow
 function gemType(v) { return v === 200 ? 200 : v % 100; }
 
 function renderBoard() {
@@ -354,6 +354,7 @@ function renderBoard() {
     let isSpecial = false;
 
     if (type === 200) { isSpecial = "rainbow"; }
+    else if (type >= 400) { isSpecial = "bomb"; type = type - 400; }
     else if (type >= 300) { isSpecial = "rocket-v"; type = type - 300; }
     else if (type >= 100) { isSpecial = "rocket-h"; type = type - 100; }
 
@@ -364,7 +365,8 @@ function renderBoard() {
       tile.innerHTML = `<div class="gem-img" style="background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); border-radius: 50%; box-shadow: 0 0 15px #fff; z-index: 2;"></div><span class="gem-fallback" style="z-index:3; font-size: 30px;">🌈</span>`;
     } else if (isSpecial) {
       tile.classList.add("special");
-      tile.innerHTML = `<div class="gem-img" style="background-image: url('assets/gem_${type}.png'); filter: brightness(1.5) drop-shadow(0 0 5px #fff);"></div><span class="rocket-arrow">${isSpecial === "rocket-v" ? "↕" : "↔"}</span>`;
+      tile.innerHTML = `<div class="gem-img" style="background-image: url('assets/gem_${type}.png'); filter: brightness(1.5) drop-shadow(0 0 5px #fff);"></div><span class="rocket-arrow">${isSpecial === "bomb" ? "✸" : (isSpecial === "rocket-v" ? "↕" : "↔")}</span>`;
+      if (isSpecial === "bomb") tile.classList.add("bomb");
     } else {
       tile.innerHTML = `<div class="gem-img" style="background-image: url('assets/gem_${type}.png');"></div><span class="gem-fallback">${GEMS[type]}</span>`;
     }
@@ -544,10 +546,23 @@ async function attemptSwapInner(a, b) {
   if (rainbowIdx !== -1) {
     const other = rainbowIdx === a ? b : a;
     const color = gemType(board[other]);
+    const otherVal = board[other];
     movesLeft--; updateHUD();
     const list = [rainbowIdx];
     for (let i = 0; i < board.length; i++) if (color === 200 || gemType(board[i]) === color) list.push(i);
-    await resolveMatches([...new Set(list)], { idx: rainbowIdx, color: color });
+    const preset = { idx: rainbowIdx, color: color };
+    if (otherVal >= 100 && otherVal !== 200) { preset.mega = otherVal; showPopup("Mega combo!", 40); }
+    await resolveMatches([...new Set(list)], preset);
+    return;
+  }
+
+  // Two specials swapped together: combo blast centred where they landed
+  if (board[a] >= 100 && board[b] >= 100) {
+    movesLeft--; updateHUD();
+    showPopup(["", "Cross blast!", "Big blast!", "Mega bomb!"][(board[a] >= 400 && board[b] >= 400) ? 3 : ((board[a] >= 400 || board[b] >= 400) ? 2 : 1)], 40);
+    playSound('boom');
+    const cells = comboCells(b, board[a], board[b]);
+    await resolveMatches([...new Set([a, b, ...cells])]);
     return;
   }
 
@@ -599,6 +614,7 @@ function swapTiles(a, b) {
 function scanRuns() {
   const found = new Set();
   const specials = [];
+  const hCells = new Set(), vCells = new Set();
   const t = (i) => gemType(board[i]);
 
   for (let row = 0; row < SIZE; row++) {
@@ -609,7 +625,7 @@ function scanRuns() {
       if (cur !== prev) {
         const len = col - runStart;
         if (len >= 3 && prev !== 200) {
-          for (let k = runStart; k < col; k++) found.add(row * SIZE + k);
+          for (let k = runStart; k < col; k++) { found.add(row * SIZE + k); hCells.add(row * SIZE + k); }
           const mid = row * SIZE + runStart + Math.floor(len / 2);
           if (len >= 5) specials.push({ index: mid, type: 200 });
           else if (len === 4) specials.push({ index: mid, type: 300 + prev });   // horizontal 4 -> column rocket
@@ -626,7 +642,7 @@ function scanRuns() {
       if (cur !== prev) {
         const len = row - runStart;
         if (len >= 3 && prev !== 200) {
-          for (let k = runStart; k < row; k++) found.add(k * SIZE + col);
+          for (let k = runStart; k < row; k++) { found.add(k * SIZE + col); vCells.add(k * SIZE + col); }
           const mid = (runStart + Math.floor(len / 2)) * SIZE + col;
           if (len >= 5) specials.push({ index: mid, type: 200 });
           else if (len === 4) specials.push({ index: mid, type: 100 + prev });   // vertical 4 -> row rocket
@@ -635,6 +651,11 @@ function scanRuns() {
       }
     }
   }
+  // L / T / + shapes (a horizontal and vertical run crossing) make a bomb
+  const rainbowAt = new Set(specials.filter(s => s.type === 200).map(s => s.index));
+  hCells.forEach(i => {
+    if (vCells.has(i) && !rainbowAt.has(i) && board[i] < 100) specials.push({ index: i, type: 400 + t(i) });
+  });
   return { found, specials };
 }
 
@@ -655,6 +676,7 @@ function findValidSwap() {
     if (i + SIZE < board.length) neighbours.push(i + SIZE);
     for (const j of neighbours) {
       if (board[i] === 200 || board[j] === 200) return [i, j];
+      if (board[i] >= 100 && board[j] >= 100) return [i, j];
       swapTiles(i, j);
       const ok = hasMatch();
       swapTiles(i, j);
@@ -722,6 +744,62 @@ function showPopup(text, size) {
   p.classList.remove("show"); void p.offsetWidth; p.classList.add("show");
 }
 
+// Cells hit by a special sitting at idx.
+function specialArea(idx, v) {
+  const r = Math.floor(idx / SIZE), c = idx % SIZE, out = [];
+  if (v >= 400) {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const rr = r + dr, cc = c + dc;
+      if (rr >= 0 && rr < SIZE && cc >= 0 && cc < SIZE) out.push(rr * SIZE + cc);
+    }
+  } else if (v >= 300) { for (let i = 0; i < SIZE; i++) out.push(i * SIZE + c); }          // column rocket
+  else if (v >= 100 && v !== 200) { for (let i = 0; i < SIZE; i++) out.push(r * SIZE + i); } // row rocket
+  return out;
+}
+
+// Big cells for two specials swapped together (centre = where the swap landed).
+function comboCells(centre, v1, v2) {
+  const r = Math.floor(centre / SIZE), c = centre % SIZE, out = [];
+  const isBomb = (v) => v >= 400;
+  if (isBomb(v1) && isBomb(v2)) {                       // bomb + bomb: 5x5
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const rr = r + dr, cc = c + dc;
+      if (rr >= 0 && rr < SIZE && cc >= 0 && cc < SIZE) out.push(rr * SIZE + cc);
+    }
+  } else if (isBomb(v1) || isBomb(v2)) {                // bomb + rocket: 3 rows + 3 columns
+    for (let d = -1; d <= 1; d++) for (let i = 0; i < SIZE; i++) {
+      if (r + d >= 0 && r + d < SIZE) out.push((r + d) * SIZE + i);
+      if (c + d >= 0 && c + d < SIZE) out.push(i * SIZE + c + d);
+    }
+  } else {                                              // rocket + rocket: cross
+    for (let i = 0; i < SIZE; i++) { out.push(r * SIZE + i); out.push(i * SIZE + c); }
+  }
+  return out;
+}
+
+// Expands a clear list so specials caught in the blast chain-react.
+function expandClears(base, preset) {
+  const set = new Set(base);
+  if (preset && preset.mega) {            // rainbow + special: the special fires from every gem of that colour
+    base.forEach(i => { if (i !== preset.idx) specialArea(i, preset.mega).forEach(x => set.add(x)); });
+  }
+  const queue = [...set], done = new Set();
+  while (queue.length) {
+    const idx = queue.pop();
+    if (done.has(idx)) continue;
+    done.add(idx);
+    const v = board[idx];
+    if (v === 200) {
+      if (preset && preset.idx === idx) continue;           // colour already chosen by the swap
+      const targetColor = Math.floor(Math.random() * GEMS.length);
+      for (let i = 0; i < board.length; i++) if (gemType(board[i]) === targetColor && !set.has(i)) { set.add(i); queue.push(i); }
+    } else if (v >= 100) {
+      specialArea(idx, v).forEach(i => { if (!set.has(i)) { set.add(i); } if (!done.has(i)) queue.push(i); });
+    }
+  }
+  return Array.from(set);
+}
+
 // Clears cells, counts collected gems, cracks ice, drops new gems in.
 function clearAndCollapse(matchIndices) {
   matchIndices.forEach(function (i) {
@@ -778,21 +856,7 @@ async function resolveMatchesInner(initialMatches, preset) {
       updateHUD();
       await animateMatches(matches);
 
-      let newClears = [...matches];
-      matches.forEach(idx => {
-        const v = board[idx];
-        const r = Math.floor(idx / SIZE), c = idx % SIZE;
-        if (v === 200) {
-          if (preset && preset.idx === idx) return;          // colour already chosen by the swap
-          const targetColor = Math.floor(Math.random() * GEMS.length);
-          for (let i = 0; i < board.length; i++) if (gemType(board[i]) === targetColor) newClears.push(i);
-        } else if (v >= 300) {
-          for (let i = 0; i < SIZE; i++) newClears.push(i * SIZE + c);   // column rocket
-        } else if (v >= 100) {
-          for (let i = 0; i < SIZE; i++) newClears.push(r * SIZE + i);   // row rocket
-        }
-      });
-      newClears = [...new Set(newClears)];
+      const newClears = expandClears(matches, preset);
       cleared += newClears.length - matches.length;
       preset = null;
 
@@ -1150,6 +1214,11 @@ document.addEventListener("DOMContentLoaded", () => {
     initAudio(); syncSettingsUI();
     document.getElementById("settings-modal").classList.add("show");
   });
+  document.getElementById("btn-guide").addEventListener("click", () => {
+    document.getElementById("settings-modal").classList.remove("show");
+    document.getElementById("guide-modal").classList.add("show");
+  });
+  document.getElementById("btn-guide-close").addEventListener("click", () => document.getElementById("guide-modal").classList.remove("show"));
   document.getElementById("btn-settings-close").addEventListener("click", () => document.getElementById("settings-modal").classList.remove("show"));
   document.getElementById("tg-sound").addEventListener("click", () => toggleSetting("sound"));
   document.getElementById("tg-music").addEventListener("click", () => toggleSetting("music"));
