@@ -21,6 +21,10 @@ let hints = 2;
 let iceGrid = [];
 let collected = {};
 let pendingDrops = null;
+let lockGrid = [];        // chained cells: can't be swapped until a match clears them
+let itemsCollected = 0;   // drop-items (🍒) that reached the bottom
+let windDue = false;      // wind shifts rows once after each player move
+const ITEM = 99;          // cell value of a drop-item (never matches, immune to blasts)
 let hammerMode = false;
 let isPaused = false;
 
@@ -349,11 +353,17 @@ function renderBoard() {
     if (i === selectedIndex) tile.classList.add("selected");
     if (hammerMode) tile.classList.add("hammer-target");
     if (iceGrid[i] > 0) { tile.classList.add("ice"); tile.dataset.ice = iceGrid[i]; }
+    if (lockGrid[i]) tile.classList.add("locked");
+    if (currentLevel && currentLevel.wind) {
+      const w = currentLevel.wind.find(x => x.row === Math.floor(i / SIZE));
+      if (w) tile.classList.add(w.dir > 0 ? "wind-r" : "wind-l");
+    }
 
     let type = board[i];
     let isSpecial = false;
 
-    if (type === 200) { isSpecial = "rainbow"; }
+    if (type === ITEM) { isSpecial = "item"; }
+    else if (type === 200) { isSpecial = "rainbow"; }
     else if (type >= 400) { isSpecial = "bomb"; type = type - 400; }
     else if (type >= 300) { isSpecial = "rocket-v"; type = type - 300; }
     else if (type >= 100) { isSpecial = "rocket-h"; type = type - 100; }
@@ -361,7 +371,9 @@ function renderBoard() {
     tile.dataset.type = type;
     tile.dataset.index = i;
 
-    if (isSpecial === "rainbow") {
+    if (isSpecial === "item") {
+      tile.innerHTML = `<span class="item-gem">🍒</span>`;
+    } else if (isSpecial === "rainbow") {
       tile.innerHTML = `<div class="gem-img" style="background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); border-radius: 50%; box-shadow: 0 0 15px #fff; z-index: 2;"></div><span class="gem-fallback" style="z-index:3; font-size: 30px;">🌈</span>`;
     } else if (isSpecial) {
       tile.classList.add("special");
@@ -529,6 +541,7 @@ async function animateSwap(a, b) {
 }
 
 async function attemptSwap(a, b) {
+  if (levelOver) return;
   try { await attemptSwapInner(a, b); }
   catch (err) { console.error(err); showPopup("⚠ " + ((err && err.message) || err), 14); isBusy = false; }
 }
@@ -536,6 +549,12 @@ async function attemptSwap(a, b) {
 async function attemptSwapInner(a, b) {
   isBusy = true;
   selectedIndex = null;
+  // chained cells and rainbow-with-item swaps are not allowed (no move spent)
+  if (lockGrid[a] || lockGrid[b] || (board[a] === 200 && board[b] === ITEM) || (board[b] === 200 && board[a] === ITEM)) {
+    playSound('swap'); vib(60);
+    renderBoard(); isBusy = false;
+    return;
+  }
   await animateSwap(a, b);
   swapTiles(a, b);
   renderBoard();
@@ -547,7 +566,7 @@ async function attemptSwapInner(a, b) {
     const other = rainbowIdx === a ? b : a;
     const color = gemType(board[other]);
     const otherVal = board[other];
-    movesLeft--; updateHUD();
+    movesLeft--; windDue = true; updateHUD();
     const list = [rainbowIdx];
     for (let i = 0; i < board.length; i++) if (color === 200 || gemType(board[i]) === color) list.push(i);
     const preset = { idx: rainbowIdx, color: color };
@@ -558,7 +577,7 @@ async function attemptSwapInner(a, b) {
 
   // Two specials swapped together: combo blast centred where they landed
   if (board[a] >= 100 && board[b] >= 100) {
-    movesLeft--; updateHUD();
+    movesLeft--; windDue = true; updateHUD();
     showPopup(["", "Cross blast!", "Big blast!", "Mega bomb!"][(board[a] >= 400 && board[b] >= 400) ? 3 : ((board[a] >= 400 || board[b] >= 400) ? 2 : 1)], 40);
     playSound('boom');
     const cells = comboCells(b, board[a], board[b]);
@@ -575,13 +594,15 @@ async function attemptSwapInner(a, b) {
     isBusy = false;
     return;
   }
-  movesLeft--; updateHUD();
+  movesLeft--; windDue = true; updateHUD();
   await resolveMatches(matches);
 }
 
 async function onTileTap(index) {
+  if (levelOver) return;
   if (isBusy || isPaused) return;
 
+  if (hammerMode && board[index] === ITEM) return;
   if (hammerMode) {
     hammerMode = false; hammers--; persistInventory(); isBusy = true;
     updateHUD(); playSound('pop');
@@ -624,7 +645,7 @@ function scanRuns() {
       const prev = t(row * SIZE + col - 1);
       if (cur !== prev) {
         const len = col - runStart;
-        if (len >= 3 && prev !== 200) {
+        if (len >= 3 && prev !== 200 && prev !== ITEM) {
           for (let k = runStart; k < col; k++) { found.add(row * SIZE + k); hCells.add(row * SIZE + k); }
           const mid = row * SIZE + runStart + Math.floor(len / 2);
           if (len >= 5) specials.push({ index: mid, type: 200 });
@@ -641,7 +662,7 @@ function scanRuns() {
       const prev = t((row - 1) * SIZE + col);
       if (cur !== prev) {
         const len = row - runStart;
-        if (len >= 3 && prev !== 200) {
+        if (len >= 3 && prev !== 200 && prev !== ITEM) {
           for (let k = runStart; k < row; k++) { found.add(k * SIZE + col); vCells.add(k * SIZE + col); }
           const mid = (runStart + Math.floor(len / 2)) * SIZE + col;
           if (len >= 5) specials.push({ index: mid, type: 200 });
@@ -675,6 +696,8 @@ function findValidSwap() {
     if (c < SIZE - 1) neighbours.push(i + 1);
     if (i + SIZE < board.length) neighbours.push(i + SIZE);
     for (const j of neighbours) {
+      if (lockGrid[i] || lockGrid[j]) continue;
+      if (board[i] === ITEM && board[j] === 200 || board[j] === ITEM && board[i] === 200) continue;
       if (board[i] === 200 || board[j] === 200) return [i, j];
       if (board[i] >= 100 && board[j] >= 100) return [i, j];
       swapTiles(i, j);
@@ -687,9 +710,12 @@ function findValidSwap() {
 }
 
 function shuffleBoardArray() {
-  for (let i = board.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [board[i], board[j]] = [board[j], board[i]];
+  const slots = [];
+  for (let i = 0; i < board.length; i++) if (board[i] !== ITEM) slots.push(i);
+  for (let k = slots.length - 1; k > 0; k--) {
+    const m = Math.floor(Math.random() * (k + 1));
+    const x = slots[k], y = slots[m];
+    [board[x], board[y]] = [board[y], board[x]];
   }
 }
 
@@ -708,6 +734,28 @@ function newPlayableBoard() {
   }
 }
 
+function lockRemaining() { return lockGrid.reduce((n, v) => n + (v ? 1 : 0), 0); }
+
+// Drop-items that reached the bottom row are collected and removed.
+function collectBottomItems() {
+  const hit = [];
+  for (let c = 0; c < SIZE; c++) { const idx = (SIZE - 1) * SIZE + c; if (board[idx] === ITEM) hit.push(idx); }
+  if (!hit.length) return false;
+  itemsCollected += hit.length;
+  clearAndCollapse(hit);
+  return true;
+}
+
+// Wind: shifts each windy row one cell (wrapping) in its direction.
+function applyWind() {
+  if (!currentLevel || !currentLevel.wind) return;
+  currentLevel.wind.forEach(w => {
+    const row = board.slice(w.row * SIZE, (w.row + 1) * SIZE);
+    const shifted = w.dir > 0 ? [row[SIZE - 1]].concat(row.slice(0, SIZE - 1)) : row.slice(1).concat([row[0]]);
+    for (let c = 0; c < SIZE; c++) board[w.row * SIZE + c] = shifted[c];
+  });
+}
+
 function iceRemaining() { return iceGrid.reduce((n, v) => n + (v > 0 ? 1 : 0), 0); }
 
 function goalsMet() {
@@ -715,7 +763,9 @@ function goalsMet() {
   if (!L) return false;
   if (L.collect && !L.collect.every(c => (collected[c.gem] || 0) >= c.target)) return false;
   if (L.ice && iceRemaining() > 0) return false;
-  if (!L.collect && !L.ice && cleared < goal) return false;
+  if (L.chains && lockRemaining() > 0) return false;
+  if (L.items && itemsCollected < L.items) return false;
+  if (!L.collect && !L.ice && !L.chains && !L.items && cleared < goal) return false;
   return true;
 }
 
@@ -725,6 +775,8 @@ function goalText() {
   const parts = [];
   if (L.collect) L.collect.forEach(c => parts.push(GEMS[c.gem] + " " + Math.min(collected[c.gem] || 0, c.target) + "/" + c.target));
   if (L.ice) parts.push("❄️ " + iceRemaining() + " left");
+  if (L.chains) parts.push("⛓️ " + lockRemaining() + " left");
+  if (L.items) parts.push("🍒 " + itemsCollected + "/" + L.items);
   return parts.length ? parts.join("  ") : cleared + " / " + goal;
 }
 
@@ -733,7 +785,11 @@ function goalIntroText() {
   const parts = [];
   if (L.collect) L.collect.forEach(c => parts.push("Collect " + c.target + " " + GEMS[c.gem]));
   if (L.ice) parts.push("Break all the ice ❄️");
-  return parts.length ? parts.join(" + ") : "Clear " + goal + " gems";
+  if (L.chains) parts.push("Break the chains ⛓️");
+  if (L.items) parts.push("Bring " + L.items + " 🍒 to the bottom");
+  let text = parts.length ? parts.join(" + ") : "Clear " + goal + " gems";
+  if (L.wind) text += "  💨 rows slide";
+  return text;
 }
 
 function showPopup(text, size) {
@@ -797,7 +853,7 @@ function expandClears(base, preset) {
       specialArea(idx, v).forEach(i => { if (!set.has(i)) { set.add(i); } if (!done.has(i)) queue.push(i); });
     }
   }
-  return Array.from(set);
+  return Array.from(set).filter(i => board[i] !== ITEM);
 }
 
 // Clears cells, counts collected gems, cracks ice, drops new gems in.
@@ -805,8 +861,9 @@ function clearAndCollapse(matchIndices) {
   matchIndices.forEach(function (i) {
     const v = board[i];
     if (v >= 0) {
-      if (v !== 200) collected[gemType(v)] = (collected[gemType(v)] || 0) + 1;
+      if (v !== 200 && v !== ITEM) collected[gemType(v)] = (collected[gemType(v)] || 0) + 1;
       if (iceGrid[i] > 0) iceGrid[i]--;
+      if (lockGrid[i]) lockGrid[i] = false;
     }
     board[i] = -1;
   });
@@ -864,7 +921,17 @@ async function resolveMatchesInner(initialMatches, preset) {
       renderBoard();
       updateHUD();
       await sleep(340);
+      while (collectBottomItems()) { playSound('coin'); renderBoard(); updateHUD(); await sleep(340); }
       matches = findMatches();
+    }
+    if (windDue) {
+      windDue = false;
+      if (!goalsMet() && movesLeft > 0 && currentLevel && currentLevel.wind) {
+        applyWind(); showPopup("💨", 44); renderBoard(); await sleep(380);
+        while (collectBottomItems()) { playSound('coin'); renderBoard(); updateHUD(); await sleep(340); }
+        matches = findMatches();
+        if (matches.length) continue;
+      }
     }
     if (goalsMet() || movesLeft <= 0 || findValidSwap()) break;
     showPopup("No moves — reshuffling!", 28);
@@ -888,7 +955,7 @@ function updateHUD() {
   if (movesEl) movesEl.textContent = movesLeft;
   if (clearedEl) {
     clearedEl.textContent = goalText();
-    clearedEl.classList.toggle("small", !!(currentLevel && (currentLevel.collect || currentLevel.ice)));
+    clearedEl.classList.toggle("small", !!(currentLevel && (currentLevel.collect || currentLevel.ice || currentLevel.chains || currentLevel.items)));
   }
   if (nameEl && currentLevel) nameEl.textContent = currentLevel.name;
   
@@ -1040,10 +1107,27 @@ function startLevel(id) {
   document.getElementById("pause-modal").classList.remove("show");
   iceGrid = new Array(SIZE * SIZE).fill(0);
   if (level.ice) level.ice.forEach(i => { iceGrid[i] = level.iceHp || 1; });
-  collected = {}; pendingDrops = null; levelOver = false;
-  newPlayableBoard(); selectedIndex = null; isBusy = false;
+  lockGrid = new Array(SIZE * SIZE).fill(false);
+  if (level.chains) level.chains.forEach(i => { lockGrid[i] = true; });
+  collected = {}; pendingDrops = null; levelOver = false; itemsCollected = 0; windDue = false;
+  newPlayableBoard();
+  if (level.items) {
+    for (let tries = 0; tries < 60; tries++) {
+      let cols = [];
+      for (let attempt = 0; attempt < 12; attempt++) {         // spread cherries out when possible
+        const pool = [0, 1, 2, 3, 4, 5, 6, 7];
+        for (let k = pool.length - 1; k > 0; k--) { const m = Math.floor(Math.random() * (k + 1)); [pool[k], pool[m]] = [pool[m], pool[k]]; }
+        cols = pool.slice(0, level.items);
+        const sorted = cols.slice().sort((x, y) => x - y);
+        if (sorted.every((c, i) => i === 0 || c - sorted[i - 1] > 1)) break;
+      }
+      cols.forEach(c => { board[c] = ITEM; });
+      if (findValidSwap()) break;
+      newPlayableBoard();
+    }
+  } selectedIndex = null; isBusy = false;
   showScreen("screen-game");
-  requestAnimationFrame(() => { updateHUD(); renderBoard(); showPopup(goalIntroText(), 26); });
+  requestAnimationFrame(() => { updateHUD(); renderBoard(); (() => { const t = goalIntroText(); showPopup(t, t.length > 26 ? 18 : 26); })(); });
 }
 
 function advanceFromWin() {
@@ -1208,7 +1292,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-hint").addEventListener("click", () => {
-    if (hints <= 0 || isBusy || isPaused) return;
+    if (hints <= 0 || isBusy || isPaused || levelOver) return;
     const swap = findValidSwap();
     if (!swap) return;
     hints--; persistInventory(); hammerMode = false; selectedIndex = null;
@@ -1218,12 +1302,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-shuffle").addEventListener("click", async () => {
-    if (shuffles > 0 && !isBusy && !isPaused) {
+    if (shuffles > 0 && !isBusy && !isPaused && !levelOver) {
       shuffles--; persistInventory(); updateHUD(); playSound('swap');
-      for (let i = board.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [board[i], board[j]] = [board[j], board[i]];
-      }
+      shuffleBoardArray();            // keeps cherries in place
       isBusy = true;
       renderBoard(); await sleep(200);
       await resolveMatches(findMatches());

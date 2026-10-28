@@ -297,6 +297,43 @@ const GOAL_TUNING = {
       else if (k === 0) { l.kind = "mixed"; l.ice = cells(iceN); l.iceHp = 1; l.collect = [{ gem: gA, target: share2 }, { gem: gB, target: share2 }]; l.moves += GOAL_TUNING.iceBonusMoves + 2; }
       if (l.kind !== "clear") l.moves += 3;
       if (l.iceHp === 2) l.moves += 2;     // 2-hit ice gets extra moves
+
+      // ---- NEW MECHANICS, introduced gradually --------------------------
+      //  chains  (⛓️)  levels 251+    - tiles that can't be swapped until matched
+      //  drop 🍒       levels 201+    - bring cherries to the bottom row
+      //  wind    (💨)  levels 301+    - a row slides sideways after every move
+      const taken = (l.ice || []).slice();
+      const extraCells = function (count) {
+        const r = rng(id + 777), out = [];
+        while (out.length < count) { const c = Math.floor(r() * 64); if (taken.indexOf(c) === -1 && out.indexOf(c) === -1) out.push(c); }
+        out.forEach(function (c) { taken.push(c); });
+        return out;
+      };
+      const windRows = function (n) {
+        const row = 2 + (id % 4), dir = (id % 2) ? 1 : -1;
+        const list = [{ row: row, dir: dir }];
+        if (n > 1) list.push({ row: row < 4 ? row + 3 : row - 3, dir: -dir });
+        return list;
+      };
+      if (k === 6) {                                   // drop levels
+        l.kind = "drop";
+        l.items = Math.min(1 + Math.floor((id - 200) / 75), 4);
+        l.moves = 22 + 4 * l.items;
+        if (id > 400) { l.ice = extraCells(2); l.iceHp = 1; l.moves += 3; }
+      }
+      if (k === 2 && id > 250) {                       // chain levels
+        l.kind = "chain";
+        l.chains = extraCells(Math.min(4 + Math.floor((id - 250) / 50), 8));
+        l.moves += 5;
+      }
+      if (k === 1 && id > 300) {                       // wind levels
+        l.kind = "wind";
+        l.wind = windRows(id > 450 ? 2 : 1);
+        l.goal = Math.round(l.goal * 1.45);
+        l.moves += 1;
+      }
+      if (id > 400 && (k === 3 || k === 5)) { l.chains = extraCells(3); l.moves += 3; }   // chains join collect / mixed
+      if (id > 450 && (k === 7 || k === 9)) { l.wind = windRows(1); l.moves += 3; }        // wind joins collect / 2-hit ice
       return;
     }
     if (id > 150) {                       // bonus chapters 16-20: five-level rotation
