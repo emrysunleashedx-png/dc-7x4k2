@@ -38,6 +38,7 @@
           <p class="title-small">Desire's</p>
           <h1>Cascade</h1>
         </div>
+        <button class="birthday-banner" id="birthday-banner" style="display:none">🎂 Happy Birthday, Desire! 🎂</button>
 
         <div class="hero-portrait-frame">
           <div class="hero-portrait" style="background-image: url('assets/desire.jpg');"></div>
@@ -65,6 +66,7 @@
           </button>
         </div>
         <button class="memories-home-btn" id="btn-memories">💌 Unlocked Memories</button>
+        <button class="memories-home-btn daily-btn" id="btn-birthday-level" style="display:none">🎂 Birthday Level</button>
         <button class="memories-home-btn daily-btn" id="btn-daily" style="display:none">🎁 Daily Reward ready!</button>
 
       </div>
@@ -189,6 +191,19 @@
         <button class="btn btn-success" id="btn-resume" style="width: 100%; margin-bottom: 12px;">Resume</button>
         <button class="btn btn-primary" id="btn-restart" style="width: 100%; margin-bottom: 12px;">Restart Level</button>
         <button class="btn btn-map" id="btn-quit" style="width: 100%;">Quit to Map</button>
+      </div>
+    </div>
+
+    <!-- Birthday (only appears on the birthday date) -->
+    <div id="birthday-modal" class="modal-overlay birthday-overlay">
+      <div class="birthday-confetti" id="birthday-confetti"></div>
+      <div class="modal-content birthday-card">
+        <div class="birthday-cake">🎂</div>
+        <h2 id="birthday-title">Happy Birthday!</h2>
+        <p class="birthday-note" id="birthday-note"></p>
+        <div class="birthday-gift" id="birthday-gift"></div>
+        <p class="birthday-hint" id="birthday-level-hint" style="display:none">🎂 A special birthday level is waiting on your title screen.</p>
+        <button class="btn btn-success" id="btn-birthday-claim" style="width:100%">Open your gift 🎁</button>
       </div>
     </div>
 

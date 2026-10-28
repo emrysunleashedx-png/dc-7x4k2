@@ -15,6 +15,27 @@ let cleared = 0;
 let goal = 0;
 
 const PLAYER_NAME = "Desire";
+
+// ---- BIRTHDAY -----------------------------------------------------------
+// Shows a one-time surprise on this date (her phone's local date), every year.
+// Preview it any time by opening the site with  ?birthday=preview  (nothing is saved).
+const BIRTHDAY = {
+  month: 11, day: 1,
+  note: "Today is your day, so before anything else: I'm glad you were born. The world got a little warmer, a little funnier, and a lot more interesting when you arrived.\n\nI made this game one level at a time, hoping it would put a smile on your face on ordinary days. Today I hope it's just one small part of a day full of good things.\n\nI hope you get the quiet moments and the loud ones. The cake, the laughter, and the people who see how special you are. I hope you rest, and I hope you're as kind to yourself as you are to everyone else.\n\nNo pressure, no expectations. Just a gift from me, with all my best wishes.\n\nHappy birthday, Desire. 🎂💗",
+  gift: { coins: 500, gems: 10, hammers: 3, shuffles: 3, hints: 3 },
+  levelDays: 3,                                   // special level stays playable this many days (1 = birthday only)
+  levelBonus: { coins: 300, gems: 5 }             // one-time extra reward for finishing it each year
+};
+
+// The special birthday level: break a heart made of ice. It lives outside the normal
+// level list, so it never affects her progress on the map.
+const BIRTHDAY_LEVEL = {
+  id: "bday", birthday: true, chapter: 0, name: "Happy Birthday, " + PLAYER_NAME + "!",
+  goal: 0, moves: 34, iceHp: 1,
+  ice: [9, 10, 13, 14, 16, 19, 20, 23, 24, 31, 33, 38, 42, 45, 51, 52],   // heart outline
+  intro: "Break the heart 💖"
+};
+let birthdayShowing = false;
 let hammers = 3;
 let shuffles = 2;
 let hints = 2;
@@ -161,6 +182,7 @@ function playSound(type, chain) {
 
 // ---- GAME LOGIC ----------------------------------------------------
 function getLevelById(id) {
+  if (id === "bday") return BIRTHDAY_LEVEL;
   for (let i = 0; i < LEVELS.length; i++) { if (LEVELS[i].id === id) return LEVELS[i]; }
   return null;
 }
@@ -186,6 +208,7 @@ function updateHomeBadge() {
   const el = document.getElementById("home-level");
   if (el) el.textContent = loadProgress().highestUnlocked;
   refreshWallet();
+  updateBirthdayBanner();
 }
 
 // ---- WALLET / INVENTORY (stored inside the progress save) -----------
@@ -276,6 +299,80 @@ function updateDailyButton() {
   const btn = document.getElementById("btn-daily");
   if (btn) btn.style.display = dailyState().claimable ? "block" : "none";
 }
+// ---- BIRTHDAY LOGIC ----
+function birthdayPreview() { return /[?&]birthday=preview/.test(location.search); }
+function isBirthdayToday() {
+  if (birthdayPreview()) return true;
+  const d = new Date();
+  return d.getMonth() + 1 === BIRTHDAY.month && d.getDate() === BIRTHDAY.day;
+}
+function birthdayUnclaimed() {
+  if (birthdayPreview()) return true;
+  return getWallet().birthdayClaimed !== new Date().getFullYear();
+}
+function isBirthdayLevelAvailable() {
+  if (birthdayPreview()) return true;
+  const d = new Date();
+  const start = new Date(d.getFullYear(), BIRTHDAY.month - 1, BIRTHDAY.day);
+  const today = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((today - start) / 86400000);
+  return days >= 0 && days < BIRTHDAY.levelDays;
+}
+function updateBirthdayBanner() {
+  const lv = document.getElementById("btn-birthday-level");
+  if (lv) lv.style.display = isBirthdayLevelAvailable() ? "block" : "none";
+  const b = document.getElementById("birthday-banner");
+  if (b) b.style.display = isBirthdayToday() ? "block" : "none";
+}
+function giftText(g) {
+  return ["🪙 " + g.coins, "💎 " + g.gems, "🔨 " + g.hammers, "🔀 " + g.shuffles, "💡 " + g.hints].join("   ");
+}
+function showBirthday() {
+  const claimed = !birthdayUnclaimed();
+  document.getElementById("birthday-title").textContent = "Happy Birthday, " + PLAYER_NAME + "!";
+  document.getElementById("birthday-note").textContent = BIRTHDAY.note;
+  const gift = document.getElementById("birthday-gift");
+  gift.textContent = claimed ? "" : giftText(BIRTHDAY.gift);
+  gift.style.display = claimed ? "none" : "block";
+  document.getElementById("btn-birthday-claim").textContent = claimed ? "Close 💗" : "Open your gift 🎁";
+  document.getElementById("birthday-level-hint").style.display = isBirthdayLevelAvailable() ? "block" : "none";
+  const box = document.getElementById("birthday-confetti");
+  box.innerHTML = "";
+  const bits = ["🎉", "🎂", "💖", "🎈", "✨", "🌸", "🎁", "⭐"];
+  for (let i = 0; i < 44; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti-bit"; s.textContent = bits[i % bits.length];
+    s.style.left = Math.random() * 100 + "%";
+    s.style.animationDuration = (3 + Math.random() * 3) + "s";
+    s.style.animationDelay = (Math.random() * 2) + "s";
+    s.style.fontSize = (16 + Math.random() * 20) + "px";
+    box.appendChild(s);
+  }
+  birthdayShowing = true;
+  document.getElementById("birthday-modal").classList.add("show");
+  playSound("win"); vib([60, 40, 60]);
+}
+function closeBirthday() {
+  document.getElementById("birthday-modal").classList.remove("show");
+  birthdayShowing = false;
+  if (dailyState().claimable) setTimeout(openDaily, 500);
+}
+function claimBirthday() {
+  if (birthdayUnclaimed()) {
+    const g = BIRTHDAY.gift, w = getWallet();
+    if (!birthdayPreview()) {
+      patchSave({
+        coins: w.coins + g.coins, gems: w.gems + g.gems,
+        hammers: w.hammers + g.hammers, shuffles: w.shuffles + g.shuffles, hints: w.hints + g.hints,
+        birthdayClaimed: new Date().getFullYear()
+      });
+    }
+    playSound("coin"); vib([40, 30, 40]);
+    refreshWallet();
+  }
+  closeBirthday();
+}
+
 function openDaily() {
   const s = dailyState();
   if (!s.claimable) return;
@@ -774,7 +871,7 @@ function goalText() {
   if (!L) return "";
   const parts = [];
   if (L.collect) L.collect.forEach(c => parts.push(GEMS[c.gem] + " " + Math.min(collected[c.gem] || 0, c.target) + "/" + c.target));
-  if (L.ice) parts.push("❄️ " + iceRemaining() + " left");
+  if (L.ice) parts.push((L.birthday ? "💖 " : "❄️ ") + iceRemaining() + " left");
   if (L.chains) parts.push("⛓️ " + lockRemaining() + " left");
   if (L.items) parts.push("🍒 " + itemsCollected + "/" + L.items);
   return parts.length ? parts.join("  ") : cleared + " / " + goal;
@@ -782,6 +879,7 @@ function goalText() {
 
 function goalIntroText() {
   const L = currentLevel;
+  if (L.intro) return L.intro;
   const parts = [];
   if (L.collect) L.collect.forEach(c => parts.push("Collect " + c.target + " " + GEMS[c.gem]));
   if (L.ice) parts.push("Break all the ice ❄️");
@@ -992,7 +1090,7 @@ window.addEventListener("error", (e) => { try { showPopup("⚠ " + e.message, 14
 
 function showWin() {
   playSound('win');
-  unlockLevel(currentLevel.id + 1);
+  if (!currentLevel.birthday) unlockLevel(currentLevel.id + 1);
 
   const stars = starsFor(movesLeft, currentLevel.moves);
   const w = getWallet();
@@ -1131,8 +1229,39 @@ function startLevel(id) {
 }
 
 function advanceFromWin() {
+  if (currentLevel.birthday) { showBirthdayComplete(); return; }
   const hasMessage = showMessageIfAny(currentLevel.id);
   if (!hasMessage) afterWinFlow();
+}
+
+function showBirthdayComplete() {
+  const w = getWallet();
+  const year = new Date().getFullYear();
+  let bonus = "Thank you for playing today 💗";
+  if (w.birthdayLevelDone !== year && !birthdayPreview()) {
+    w.coins += BIRTHDAY.levelBonus.coins; w.gems += BIRTHDAY.levelBonus.gems; w.birthdayLevelDone = year;
+    saveProgress(w);
+    bonus = "+" + BIRTHDAY.levelBonus.coins + " 🪙   +" + BIRTHDAY.levelBonus.gems + " 💎";
+  }
+  document.getElementById("chapter-kicker").textContent = "Birthday level complete";
+  document.getElementById("chapter-emoji").textContent = "🎂";
+  document.getElementById("chapter-title").textContent = "Happy Birthday, " + PLAYER_NAME + "!";
+  document.getElementById("chapter-bonus").textContent = bonus;
+  document.getElementById("chapter-next").textContent = "You broke the heart. Now go enjoy your day 💗";
+  const box = document.getElementById("chapter-confetti");
+  box.innerHTML = "";
+  const bits = ["🎉", "🎂", "💖", "🎈", "✨", "🎁"];
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti-bit"; s.textContent = bits[i % bits.length];
+    s.style.left = Math.random() * 100 + "%";
+    s.style.animationDuration = (2.6 + Math.random() * 2.4) + "s";
+    s.style.animationDelay = (Math.random() * 1.6) + "s";
+    s.style.fontSize = (16 + Math.random() * 20) + "px";
+    box.appendChild(s);
+  }
+  playSound("win");
+  showScreen("screen-chapter");
 }
 
 function isChapterEnd(level) {
@@ -1260,6 +1389,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const noteCard = document.querySelector("#screen-message .message-card");
   if (noteCard) noteCard.addEventListener("click", skipTyping);
   document.getElementById("btn-chapter-continue").addEventListener("click", () => {
+    if (currentLevel && currentLevel.birthday) { updateHomeBadge(); showScreen("screen-title"); return; }
     // After the story finale (ch. 15) return to the title instead of jumping straight into the bonus levels
     const ch = CHAPTERS.find(c => c.id === currentLevel.chapter);
     const next = CHAPTERS.find(c => c.id === currentLevel.chapter + 1);
@@ -1345,7 +1475,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-daily-claim").addEventListener("click", claimDaily);
   document.getElementById("daily-modal").addEventListener("click", (e) => { if (e.target.id === "daily-modal") e.target.classList.remove("show"); });
   updateDailyButton();
-  if (dailyState().claimable) setTimeout(openDaily, 600);
+  document.getElementById("btn-birthday-claim").addEventListener("click", claimBirthday);
+  document.getElementById("btn-birthday-level").addEventListener("click", () => { initAudio(); startLevel("bday"); });
+  document.getElementById("birthday-banner").addEventListener("click", () => { initAudio(); showBirthday(); });
+  updateBirthdayBanner();
+  if (isBirthdayToday() && birthdayUnclaimed()) { birthdayShowing = true; setTimeout(showBirthday, 500); }
+  else if (dailyState().claimable) setTimeout(openDaily, 600);
 
   let tapCount = 0; let tapTimer = null;
   const titleText = document.querySelector(".title-logo h1");
