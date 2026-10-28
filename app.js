@@ -1075,7 +1075,9 @@ function showChapterComplete(level) {
   document.getElementById("chapter-emoji").textContent = ch.emoji;
   document.getElementById("chapter-title").textContent = ch.title;
   document.getElementById("chapter-bonus").textContent = bonus;
-  document.getElementById("chapter-next").textContent = next ? "Next: " + next.title + " " + next.emoji : "You finished the whole story, " + PLAYER_NAME + " 💗";
+  document.getElementById("chapter-next").textContent = !next ? "You finished everything, " + PLAYER_NAME + " 💗"
+    : (next.bonus && !ch.bonus) ? "The story is complete 💗  Bonus levels unlocked: " + next.title + " " + next.emoji
+    : "Next: " + next.title + " " + next.emoji;
 
   const box = document.getElementById("chapter-confetti");
   box.innerHTML = "";
@@ -1105,9 +1107,14 @@ function buildMap() {
   mapContainer.innerHTML = "";
   const progress = loadProgress();
 
+  let hiddenChapters = 0;
   CHAPTERS.forEach(chapter => {
     const chapterLevels = LEVELS.filter(l => l.chapter === chapter.id);
     if (chapterLevels.length === 0) return;
+    // keep the map light: show unlocked chapters plus one locked teaser
+    const prevChapterStart = LEVELS.find(l => l.chapter === chapter.id - 1);
+    const reachable = chapterLevels[0].id <= progress.highestUnlocked || (prevChapterStart && prevChapterStart.id <= progress.highestUnlocked);
+    if (!reachable) { hiddenChapters++; return; }
 
     const group = document.createElement("div");
     group.className = "chapter-group";
@@ -1125,6 +1132,7 @@ function buildMap() {
         tag.className = "level-stars"; tag.textContent = "★".repeat(earned);
         btn.appendChild(tag);
       }
+      if (lvl.id === progress.highestUnlocked) btn.classList.add("current");
       if (lvl.id <= progress.highestUnlocked) {
         btn.classList.add("unlocked");
         btn.onclick = () => startLevel(lvl.id);
@@ -1137,13 +1145,27 @@ function buildMap() {
     group.appendChild(grid);
     mapContainer.appendChild(group);
   });
+  if (hiddenChapters > 0) {
+    const more = document.createElement("div");
+    more.className = "chapter-header";
+    more.style.justifyContent = "center";
+    more.textContent = "🔒 " + hiddenChapters + " more chapters to discover";
+    mapContainer.appendChild(more);
+  }
+}
+
+function scrollMapToCurrent() {
+  requestAnimationFrame(() => {
+    const target = document.querySelector("#map-container .level-btn.current");
+    if (target && target.scrollIntoView) target.scrollIntoView({ block: "center" });
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   updateHomeBadge();
 
   document.getElementById("btn-start").addEventListener("click", () => { initAudio(); startLevel(loadProgress().highestUnlocked); });
-  document.getElementById("btn-map").addEventListener("click", () => { initAudio(); buildMap(); showScreen("screen-map"); });
+  document.getElementById("btn-map").addEventListener("click", () => { initAudio(); buildMap(); showScreen("screen-map"); scrollMapToCurrent(); });
   document.getElementById("btn-map-back").addEventListener("click", () => { showScreen("screen-title"); updateHomeBadge(); });
   const memoriesButton = document.getElementById("btn-memories");
   if (memoriesButton) memoriesButton.addEventListener("click", () => { buildMemories(); showScreen("screen-memories"); });
@@ -1153,7 +1175,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-message-continue").addEventListener("click", () => { if (skipTyping()) return; afterWinFlow(); });
   const noteCard = document.querySelector("#screen-message .message-card");
   if (noteCard) noteCard.addEventListener("click", skipTyping);
-  document.getElementById("btn-chapter-continue").addEventListener("click", goToNextLevel);
+  document.getElementById("btn-chapter-continue").addEventListener("click", () => {
+    // After the story finale (ch. 15) return to the title instead of jumping straight into the bonus levels
+    const ch = CHAPTERS.find(c => c.id === currentLevel.chapter);
+    const next = CHAPTERS.find(c => c.id === currentLevel.chapter + 1);
+    if (ch && next && next.bonus && !ch.bonus) { updateHomeBadge(); showScreen("screen-title"); }
+    else goToNextLevel();
+  });
   document.getElementById("btn-retry").addEventListener("click", () => startLevel(currentLevel.id));
 
   document.getElementById("btn-pause").addEventListener("click", () => {
@@ -1172,7 +1200,7 @@ document.addEventListener("DOMContentLoaded", () => {
     isPaused = false;
     document.getElementById("pause-modal").classList.remove("show");
     showScreen("screen-map");
-    buildMap();
+    buildMap(); scrollMapToCurrent();
   });
 
   document.getElementById("btn-hammer").addEventListener("click", () => {

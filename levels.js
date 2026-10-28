@@ -1,4 +1,4 @@
-// Desire's Cascade — 150 levels across 15 story chapters.
+// Desire's Cascade — 150 story levels (15 chapters) + 350 bonus levels (35 chapters) = 500.
 const CHAPTERS = [
   { id: 1, title: "Kiddo's Garden", emoji: "🌱" },
   { id: 2, title: "Musu's Orchard", emoji: "🍎" },
@@ -170,6 +170,89 @@ const LEVELS = [
   { id: 150, chapter: 15, name: "Our Story Continues", goal: 137, moves: 9 },
 ];
 
+// ---- BONUS CHAPTERS (levels 151-200) -----------------------------------
+// Placeholder names - rename freely. They have no story notes unless you add
+// entries to MESSAGES in messages.js (e.g. 160: "your note here").
+CHAPTERS.push(
+  { id: 16, title: "Sugar Rush",           emoji: "🍬", bonus: true },
+  { id: 17, title: "Midnight Market",      emoji: "🏮", bonus: true },
+  { id: 18, title: "Starlight Cove",       emoji: "🌙", bonus: true },
+  { id: 19, title: "Blossom Run",          emoji: "🌸", bonus: true },
+  { id: 20, title: "The Grand Finale",     emoji: "🎆", bonus: true }
+);
+(function addBonusLevels() {
+  const names = [
+    ["Sprinkle Start", "Candy Floss Clouds", "Gumdrop Garden", "Jellybean Jam", "Caramel Swirl", "Lollipop Lane", "Sherbet Fizz", "Cocoa Rain", "Sticky Fingers", "Sugar High"],
+    ["Lantern Lit", "Spice Stall", "Silk Street", "Fortune Cookies", "Night Bazaar", "Paper Moons", "Tea for Two", "Fireflies Ahead", "Haggling Hour", "Market Closes"],
+    ["Moonlit Tide", "Pearl Hunt", "Whale Song", "Lighthouse Glow", "Seashell Secrets", "Driftwood Dreams", "Constellation Cove", "Shooting Star", "Quiet Waves", "Starfall"],
+    ["First Petals", "Cherry Breeze", "Pink Horizon", "Petal Storm", "Garden Gate", "Wild Meadow", "Butterfly Trail", "Sunbeam Hill", "Bloom Rush", "Full Blossom"],
+    ["Confetti Cannon", "Sparkler Street", "Balloon Rise", "Fireworks Prep", "Lights Up", "Drumroll", "Golden Hour", "Standing Ovation", "The Last Dance", "Still Playing"]
+  ];
+  for (let c = 0; c < names.length; c++) {
+    for (let i = 0; i < 10; i++) {
+      LEVELS.push({ id: 151 + c * 10 + i, chapter: 16 + c, name: names[c][i], goal: 78, moves: 14 });
+    }
+  }
+})();
+
+// ---- MORE BONUS CHAPTERS (levels 201-500) -------------------------------
+// Chapter name + emoji + 6 themed words. Level names are generated as
+// "<adjective> <word>" and every 10th level is "<chapter> Finale".
+// All placeholders - edit the lists, or replace the generated names later.
+const BONUS_ADJECTIVES = ["Gentle", "Golden", "Hidden", "Sparkling", "Quiet", "Dancing", "Little", "Secret", "Warm", "Bright", "Whispering", "Sleepy",
+  "Merry", "Silver", "Velvet", "Lucky", "Drifting", "Glowing", "Tender", "Wandering", "Cheerful", "Moonlit", "Sunlit", "Rosy"];
+const BONUS_CHAPTERS = [
+  ["Rainbow Bridge", "🌈", ["Arch", "Span", "Bridge", "Colour", "Mist", "Crossing"]],
+  ["Lotus Lake", "🪷", ["Lotus", "Ripple", "Reed", "Heron", "Dock", "Pond"]],
+  ["Cloud Kingdom", "☁️", ["Cloud", "Tower", "Gate", "Throne", "Drift", "Breeze"]],
+  ["Honey Hollow", "🍯", ["Honey", "Hive", "Comb", "Clover", "Bee", "Hollow"]],
+  ["Snowglobe Village", "⛄", ["Snowflake", "Chimney", "Sleigh", "Mitten", "Snowdrift", "Candle"]],
+  ["Ember Canyon", "🔥", ["Ember", "Cliff", "Spark", "Ridge", "Dust", "Flame"]],
+  ["Crystal Cavern", "💎", ["Crystal", "Geode", "Echo", "Prism", "Shard", "Glimmer"]],
+  ["Moonbeam Meadow", "🌾", ["Moonbeam", "Dandelion", "Haystack", "Fawn", "Willow", "Dew"]],
+  ["Clockwork City", "⚙️", ["Cog", "Gear", "Spring", "Tick", "Bell", "Pendulum"]],
+  ["Mermaid Lagoon", "🧜", ["Coral", "Pearl", "Tide", "Shell", "Kelp", "Wave"]],
+  ["Alpine Peaks", "🏔️", ["Peak", "Summit", "Trail", "Pine", "Glacier", "Snowcap"]],
+  ["Kite Festival", "🪁", ["Kite", "Ribbon", "Tail", "Gust", "Spool", "Skyline"]],
+  ["Bakery Lane", "🥐", ["Croissant", "Crumb", "Oven", "Dough", "Whisk", "Glaze"]],
+  ["Pirate Cove", "🏴‍☠️", ["Anchor", "Compass", "Treasure", "Plank", "Sail", "Parrot"]],
+  ["Enchanted Forest", "🌲", ["Fern", "Mushroom", "Acorn", "Owl", "Moss", "Bramble"]],
+  ["Desert Oasis", "🏜️", ["Dune", "Oasis", "Camel", "Mirage", "Palm", "Sunset"]],
+  ["Autumn Orchard", "🍂", ["Maple", "Pumpkin", "Harvest", "Leaf", "Cider", "Scarecrow"]],
+  ["Library of Stars", "📚", ["Page", "Quill", "Chapter", "Bookmark", "Inkwell", "Story"]],
+  ["Carnival Night", "🎡", ["Ferris Wheel", "Ticket", "Balloon", "Popcorn", "Carousel", "Prize"]],
+  ["Tea Garden", "🍵", ["Teapot", "Jasmine", "Steam", "Saucer", "Teacup", "Kettle"]],
+  ["Aurora Fields", "🌌", ["Aurora", "Frost", "Glow", "Shimmer", "Twilight", "Northern Light"]],
+  ["Dragon's Nest", "🐉", ["Scale", "Egg", "Wing", "Hoard", "Roar", "Cinder"]],
+  ["Rooftop Garden", "🏙️", ["Rooftop", "Antenna", "Window", "Terrace", "Neon", "Balcony"]],
+  ["Wildflower Road", "🌻", ["Sunflower", "Daisy", "Poppy", "Roadside", "Bluebell", "Pollen"]],
+  ["Secret Greenhouse", "🪴", ["Seedling", "Vine", "Orchid", "Terrarium", "Sprout", "Trellis"]],
+  ["Ice Palace", "🧊", ["Icicle", "Frostwork", "Chandelier", "Mirror", "Great Hall", "Snowdrop"]],
+  ["Dreamcatcher Hills", "🪶", ["Feather", "Dream", "Lullaby", "Pillow", "Hush", "Slumber"]],
+  ["Sunrise Harbour", "🚢", ["Harbour", "Buoy", "Seagull", "Fishing Net", "Mast", "Morning"]],
+  ["Memory Lane", "📸", ["Photograph", "Postcard", "Souvenir", "Album", "Snapshot", "Keepsake"]],
+  ["Forever and Ever", "♾️", ["Promise", "Tomorrow", "Heartbeat", "Sparkle", "Encore", "Happily"]]
+];
+(function addMoreBonus() {
+  function rngSeeded(seed) { let s = seed * 9301 + 49297; return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+  BONUS_CHAPTERS.forEach(function (def, ci) {
+    const chapterId = 21 + ci;
+    CHAPTERS.push({ id: chapterId, title: def[0], emoji: def[1], bonus: true });
+    // all adjective+word pairs, shuffled with a fixed seed so names never change between runs
+    const pairs = [];
+    BONUS_ADJECTIVES.forEach(function (a) { def[2].forEach(function (w) { pairs.push(a + " " + w); }); });
+    const r = rngSeeded(chapterId * 17);
+    for (let i = pairs.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = pairs[i]; pairs[i] = pairs[j]; pairs[j] = t; }
+    for (let i = 0; i < 10; i++) {
+      LEVELS.push({
+        id: 201 + ci * 10 + i, chapter: chapterId,
+        name: i === 9 ? def[0] + " Finale" : pairs[i],
+        goal: 120, moves: 14
+      });
+    }
+  });
+})();
+
 // ---- GOAL TYPES & BALANCE ---------------------------------------------
 // Levels 1-10: plain "clear gems". After that the goal type rotates:
 //   collect specific gems, break ice, or both. Tweak the numbers below freely.
@@ -180,17 +263,66 @@ const GOAL_TUNING = {
   collectBonusMoves: 2,
   iceBonusMoves: 4,
   collectShare: 0.3,    // share of the clear-goal needed for 1 collect gem
-  collectShareTwo: 0.17  // ...for each gem when two gems are required
+  collectShareTwo: 0.17, // ...for each gem when two gems are required
+  bonusPerMoveStart: 5.6, // levels 201-500: clear-goal gems per move, rising by...
+  bonusPerMoveRise: 0.8   // ...this much by level 500
 };
 (function applyGoalTypes() {
   function rng(seed) { let s = seed * 9301 + 49297; return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
   LEVELS.forEach(function (l) {
     const id = l.id;
     l.moves = Math.max(l.moves, GOAL_TUNING.minMoves);
-    const perMove = GOAL_TUNING.gemsPerMoveStart + (GOAL_TUNING.gemsPerMoveEnd - GOAL_TUNING.gemsPerMoveStart) * (id / LEVELS.length);
+    const perMove = GOAL_TUNING.gemsPerMoveStart + (GOAL_TUNING.gemsPerMoveEnd - GOAL_TUNING.gemsPerMoveStart) * (Math.min(id, 150) / 150);
     l.goal = Math.min(l.goal, Math.round(l.moves * perMove));
     l.kind = "clear";
     if (id <= 10) return;
+    if (id > 200) {                       // bonus chapters 21+: ten-level rotation that slowly ramps up
+      const k = id % 10, t = (id - 200) / 300;
+      const gA = (id * 3 + 1) % 5, gB = (gA + 2) % 5, gC = (gA + 4) % 5;
+      const cells = function (count) {
+        const r = rng(id), out = [];
+        while (out.length < count) { const c = Math.floor(r() * 64); if (out.indexOf(c) === -1) out.push(c); }
+        return out;
+      };
+      const iceN = Math.min(5 + Math.floor((id - 200) / 30), 12);
+      l.goal = Math.round(14 * (GOAL_TUNING.bonusPerMoveStart + GOAL_TUNING.bonusPerMoveRise * t));
+      const share2 = Math.max(5, Math.round(l.goal * GOAL_TUNING.collectShareTwo));
+      const share3 = Math.max(4, Math.round(l.goal * 0.12));
+      if (k === 3) { l.kind = "collect"; l.collect = [{ gem: gA, target: share2 }, { gem: gB, target: share2 }]; l.moves += GOAL_TUNING.collectBonusMoves; }
+      else if (k === 4) { l.kind = "ice"; l.ice = cells(id > 350 ? Math.min(Math.ceil(iceN / 2), 3) : iceN); l.iceHp = id > 350 ? 2 : 1; l.moves += GOAL_TUNING.iceBonusMoves; }
+      else if (k === 5) { l.kind = "mixed"; l.ice = cells(Math.max(4, iceN - 2)); l.iceHp = 1; l.collect = [{ gem: gA, target: share2 }]; l.moves += GOAL_TUNING.iceBonusMoves; }
+      else if (k === 7) { l.kind = "collect"; l.collect = [{ gem: gA, target: share3 }, { gem: gB, target: share3 }, { gem: gC, target: share3 }]; l.moves += GOAL_TUNING.collectBonusMoves; }
+      else if (k === 8) { l.kind = "ice"; l.ice = cells(Math.min(Math.ceil(iceN / 2) + 1, 4)); l.iceHp = 2; l.moves += GOAL_TUNING.iceBonusMoves; }
+      else if (k === 9) { l.kind = "mixed"; l.ice = cells(id > 350 ? 3 : 4); l.iceHp = 2; l.collect = [{ gem: gA, target: share2 }]; l.moves += GOAL_TUNING.iceBonusMoves; }
+      else if (k === 0) { l.kind = "mixed"; l.ice = cells(iceN); l.iceHp = 1; l.collect = [{ gem: gA, target: share2 }, { gem: gB, target: share2 }]; l.moves += GOAL_TUNING.iceBonusMoves + 2; }
+      if (l.kind !== "clear") l.moves += 3;
+      if (l.iceHp === 2) l.moves += 2;     // 2-hit ice gets extra moves
+      return;
+    }
+    if (id > 150) {                       // bonus chapters 16-20: five-level rotation
+      const k = (id - 150) % 5;
+      const gA = (id * 3 + 1) % 5, gB = (gA + 2) % 5;
+      const cells = function (count) {
+        const r = rng(id), out = [];
+        while (out.length < count) { const c = Math.floor(r() * 64); if (out.indexOf(c) === -1) out.push(c); }
+        return out;
+      };
+      const two = Math.max(5, Math.round(l.goal * GOAL_TUNING.collectShareTwo));
+      if (k === 3) {
+        l.kind = "collect";
+        l.collect = [{ gem: gA, target: two }, { gem: gB, target: two }];
+        l.moves += GOAL_TUNING.collectBonusMoves;
+      } else if (k === 4) {
+        l.kind = "ice"; l.ice = cells(id > 170 ? 4 : 8); l.iceHp = id > 170 ? 2 : 1;
+        l.moves += GOAL_TUNING.iceBonusMoves;
+      } else if (k === 0) {
+        l.kind = "mixed"; l.ice = cells(6); l.iceHp = 1;
+        l.collect = [{ gem: gA, target: two }];
+        l.moves += GOAL_TUNING.iceBonusMoves;
+      }
+      if (l.kind !== "clear") l.moves += 3;
+      return;
+    }
     const slot = id % 5;
     const gemA = (id * 3 + 1) % 5, gemB = (gemA + 2) % 5;
     const iceCells = function (count) {
