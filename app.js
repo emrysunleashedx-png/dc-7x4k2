@@ -189,8 +189,18 @@ function getLevelById(id) {
 
 const SAVE_KEY = "desires_cascade_progress";
 function loadProgress() {
-  try { const raw = localStorage.getItem(SAVE_KEY); if (!raw) return { highestUnlocked: 1 }; return JSON.parse(raw); } 
-  catch (e) { return { highestUnlocked: 1 }; }
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return { highestUnlocked: 1 };
+    const p = JSON.parse(raw);
+    // Repair: a saved story note for level N proves level N was beaten, so level N+1 must be unlocked.
+    // (Fixes saves made on older builds that stopped at level 150.)
+    if (Array.isArray(p.unlockedMoments) && p.unlockedMoments.length) {
+      const need = Math.min(Math.max.apply(null, p.unlockedMoments) + 1, LEVELS.length);
+      if (!(p.highestUnlocked >= need)) { p.highestUnlocked = need; saveProgress(p); }
+    }
+    return p;
+  } catch (e) { return { highestUnlocked: 1 }; }
 }
 function saveProgress(progress) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (e) {}
@@ -1289,7 +1299,7 @@ function showChapterComplete(level) {
   document.getElementById("chapter-title").textContent = ch.title;
   document.getElementById("chapter-bonus").textContent = bonus;
   document.getElementById("chapter-next").textContent = !next ? "You finished everything, " + PLAYER_NAME + " 💗"
-    : (next.bonus && !ch.bonus) ? "The story is complete 💗  Bonus levels unlocked: " + next.title + " " + next.emoji
+    : (next.bonus && !ch.bonus) ? "The story is complete 💗  Bonus levels start now: " + next.title + " " + next.emoji
     : "Next: " + next.title + " " + next.emoji;
 
   const box = document.getElementById("chapter-confetti");
@@ -1390,11 +1400,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (noteCard) noteCard.addEventListener("click", skipTyping);
   document.getElementById("btn-chapter-continue").addEventListener("click", () => {
     if (currentLevel && currentLevel.birthday) { updateHomeBadge(); showScreen("screen-title"); return; }
-    // After the story finale (ch. 15) return to the title instead of jumping straight into the bonus levels
-    const ch = CHAPTERS.find(c => c.id === currentLevel.chapter);
-    const next = CHAPTERS.find(c => c.id === currentLevel.chapter + 1);
-    if (ch && next && next.bonus && !ch.bonus) { updateHomeBadge(); showScreen("screen-title"); }
-    else goToNextLevel();
+    goToNextLevel();   // after the story finale (ch. 15) this goes straight into bonus level 151
   });
   document.getElementById("btn-retry").addEventListener("click", () => startLevel(currentLevel.id));
 
