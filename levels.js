@@ -1,4 +1,4 @@
-// Desire's Cascade — 150 story levels (15 chapters) + 350 bonus levels (35 chapters) = 500.
+// Desire's Cascade — 150 story levels (15 chapters) + 850 bonus levels (85 chapters) = 1000.
 const CHAPTERS = [
   { id: 1, title: "Kiddo's Garden", emoji: "🌱" },
   { id: 2, title: "Musu's Orchard", emoji: "🍎" },
@@ -253,6 +253,81 @@ const BONUS_CHAPTERS = [
   });
 })();
 
+// ---- BONUS CHAPTERS, PART 3 (levels 501-1000) ---------------------------
+// Same format as BONUS_CHAPTERS above: name, emoji, 6 themed words. Placeholders - rename freely.
+const BONUS_CHAPTERS_3 = [
+  ["Cotton Candy Skies", "🍭", ["Floss", "Sprinkle", "Puff", "Swirl", "Candy Cane", "Gumball"]],
+  ["Coral Castle", "🏰", ["Turret", "Seahorse", "Anemone", "Archway", "Tide Pool", "Chandelier"]],
+  ["Whispering Willows", "🌿", ["Willow", "Brook", "Stepping Stone", "Mossy Log", "Lily Pad", "Dragonfly"]],
+  ["Firefly Festival", "✨", ["Lantern", "Glow", "Jar", "Twilight Path", "Sparkle", "Evening"]],
+  ["Winter Market", "❄️", ["Mulled Cider", "Wreath", "Gingerbread", "Scarf", "Snowman", "Bauble"]],
+  ["Sakura Lane", "🌸", ["Sakura", "Lantern Gate", "Koi Pond", "Paper Fan", "Tea House", "Petal Path"]],
+  ["Volcano Island", "🌋", ["Lava", "Obsidian", "Palm Grove", "Crater", "Black Sand", "Geyser"]],
+  ["Space Station", "🚀", ["Orbit", "Comet", "Satellite", "Moon Rock", "Rocket", "Stardust"]],
+  ["Under the Sea", "🐠", ["Angelfish", "Bubble", "Seaweed", "Shipwreck", "Jellyfish", "Starfish"]],
+  ["Toy Workshop", "🧸", ["Teddy", "Building Block", "Wind-up Key", "Rocking Horse", "Puzzle Piece", "Spinning Top"]],
+  ["Mushroom Village", "🍄", ["Toadstool", "Spore", "Cap", "Mossy Door", "Fairy Ring", "Lantern Moth"]],
+  ["Golden Savannah", "🦁", ["Acacia", "Watering Hole", "Pride", "Sunbeam", "Giraffe", "Dust Trail"]],
+  ["Hot Air Balloons", "🎈", ["Basket", "Burner", "Envelope", "Updraft", "Flight", "Horizon"]],
+  ["Rainy Day Café", "☕", ["Umbrella", "Raindrop", "Latte", "Corner Table", "Puddle", "Steam"]],
+  ["Glow Cave", "🔮", ["Glowworm", "Stalactite", "Underground Lake", "Crystal Drip", "Echo Pool", "Lantern Stone"]],
+  ["Harvest Moon", "🌕", ["Hay Ride", "Moon Pie", "Corn Maze", "Scarecrow Hat", "Lantern Field", "Barn Dance"]],
+  ["Fairy Tale Castle", "👑", ["Drawbridge", "Tower", "Banner", "Throne", "Garden Maze", "Wishing Well"]],
+  ["Jungle Canopy", "🌴", ["Vine", "Toucan", "Waterfall", "Orchid", "Treetop", "Rope Bridge"]],
+  ["Snowy Cabin", "🏡", ["Fireplace", "Blanket", "Cocoa", "Pine Cone", "Icicle", "Woolly Sock"]],
+  ["Skyline Express", "🚆", ["Carriage", "Ticket Stub", "Whistle", "Platform", "Lantern Car", "Steam Engine"]],
+  ["Opal Mines", "💠", ["Opal", "Pickaxe", "Mine Cart", "Lantern Tunnel", "Gleam", "Vein"]],
+  ["Painted Village", "🎨", ["Brush", "Palette", "Mural", "Easel", "Splash", "Canvas"]],
+  ["Moonlit Orchard", "🌙", ["Pear", "Blossom Branch", "Owl Perch", "Dew Drop", "Night Breeze", "Silver Apple"]],
+  ["Misty Marsh", "🌫️", ["Reed Bed", "Heron Call", "Boardwalk", "Fog Bank", "Cattail", "Puddle Jump"]],
+  ["Thunder Peaks", "⚡", ["Storm Cloud", "Lightning", "Rumble", "Rain Barrel", "Gust", "Rainbow Edge"]],
+  ["Lantern Canyon", "🏮", ["Paper Lantern", "Rope Ladder", "Echo Wall", "Ember Trail", "Red Rock", "Sunset Ledge"]],
+  ["Starfish Shore", "🐚", ["Starfish", "Sandcastle", "Driftwood Fire", "Tide Line", "Sea Glass", "Beach Towel"]],
+  ["Violet Vineyard", "🍇", ["Vine Row", "Grape Cluster", "Cellar Door", "Harvest Basket", "Sunlit Slope", "Juice Press"]],
+  ["Wishing Fountain", "⛲", ["Coin", "Ripple Pool", "Stone Angel", "Mosaic", "Water Jet", "Wish"]],
+  ["Glasshouse Gardens", "🏛️", ["Glass Pane", "Fern Bed", "Brass Hinge", "Rose Arch", "Fountain Tile", "Sunroom"]],
+  ["Maple Mountain", "🍁", ["Maple Leaf", "Syrup", "Lookout", "Timber Trail", "Squirrel", "Crisp Air"]],
+  ["Puppet Theatre", "🎭", ["Curtain", "Spotlight", "Marionette", "Stage Door", "Prop Box", "Applause"]],
+  ["Ice Cream Parlour", "🍨", ["Scoop", "Cone", "Sprinkle Jar", "Sundae", "Waffle", "Cherry Top"]],
+  ["Dune Caravan", "🐪", ["Caravan", "Oasis Palm", "Spice Sack", "Starlit Dune", "Tent Pole", "Silk Rug"]],
+  ["Aurora Lake", "🌠", ["Reflection", "Frozen Shore", "Green Glow", "Skate Trail", "Pine Ridge", "Night Sky"]],
+  ["Honeycomb Heights", "🐝", ["Hexagon", "Buzz", "Pollen Cloud", "Hive Door", "Amber", "Nectar"]],
+  ["Treehouse Village", "🌳", ["Rope Swing", "Lookout Deck", "Plank Bridge", "Leaf Roof", "Wind Chime", "Secret Hatch"]],
+  ["Candlelit Hall", "🕯️", ["Candle", "Mosaic Window", "Echo Corridor", "Velvet Curtain", "Chandelier Light", "Quiet Stair"]],
+  ["Dandelion Fields", "🌼", ["Dandelion", "Seed Puff", "Wish Breeze", "Meadow Path", "Clover Patch", "Bumblebee"]],
+  ["Moonstone Bay", "🌊", ["Moonstone", "Sea Mist", "Fishing Boat", "Lighthouse Beam", "Tide Song", "Harbour Lamp"]],
+  ["Silver Lining", "🌤️", ["Silver Edge", "Cloud Break", "Sunray", "Puddle Mirror", "Rainbow Arc", "Fresh Air"]],
+  ["Carousel Park", "🎠", ["Brass Horse", "Ticket Booth", "Cotton Cloud", "Bumper Car", "Bandstand", "Lamp Post"]],
+  ["Warm Hearth", "🔥", ["Hearth", "Kettle Song", "Knitted Throw", "Candle Stub", "Quilt", "Window Frost"]],
+  ["Meteor Meadow", "☄️", ["Meteor", "Wish Rock", "Stargazer", "Night Grass", "Sparkling Trail", "Blanket Fort"]],
+  ["Garden of Echoes", "🔔", ["Wind Bell", "Stone Path", "Echo", "Chime Tree", "Hush", "Bell Flower"]],
+  ["Grand Library Tower", "📖", ["Spiral Stair", "Atlas", "Lantern Shelf", "Reading Nook", "Ink Drop", "Pressed Flower"]],
+  ["Sunrise Summit", "🌄", ["First Light", "Trailhead", "Summit Cairn", "Thin Air", "Golden Ridge", "Morning Mist"]],
+  ["Fireworks Harbour", "🎇", ["Rocket Burst", "Pier Light", "Crowd Cheer", "Sparkler", "Night Boat", "Finale Flash"]],
+  ["Home Again", "🏠", ["Doorstep", "Front Porch", "Welcome Mat", "Kitchen Light", "Garden Gate", "Old Photo"]],
+  ["Happily Ever After", "💞", ["Evermore", "Lullaby", "Tomorrow Light", "Warm Hands", "Our Song", "Sunset Bow"]]
+];
+(function addBonusPart3() {
+  function rngSeeded(seed) { let s = seed * 9301 + 49297; return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+  BONUS_CHAPTERS_3.forEach(function (def, ci) {
+    const chapterId = 51 + ci;
+    CHAPTERS.push({ id: chapterId, title: def[0], emoji: def[1], bonus: true });
+    const pairs = [];
+    BONUS_ADJECTIVES.forEach(function (a) { def[2].forEach(function (w) { pairs.push(a + " " + w); }); });
+    const r = rngSeeded(chapterId * 17);
+    for (let i = pairs.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = pairs[i]; pairs[i] = pairs[j]; pairs[j] = t; }
+    let p = 0;
+    for (let i = 0; i < 10; i++) {
+      let name = def[0] + " Finale";
+      if (i < 9) {                                   // pick the next name nobody else already uses
+        while (p < pairs.length && LEVELS.some(function (l) { return l.name === pairs[p]; })) p++;
+        name = pairs[p++];
+      }
+      LEVELS.push({ id: 501 + ci * 10 + i, chapter: chapterId, name: name, goal: 120, moves: 14 });
+    }
+  });
+})();
+
 // ---- GOAL TYPES & BALANCE ---------------------------------------------
 // Levels 1-10: plain "clear gems". After that the goal type rotates:
 //   collect specific gems, break ice, or both. Tweak the numbers below freely.
@@ -277,7 +352,7 @@ const GOAL_TUNING = {
     l.kind = "clear";
     if (id <= 10) return;
     if (id > 200) {                       // bonus chapters 21+: ten-level rotation that slowly ramps up
-      const k = id % 10, t = (id - 200) / 300;
+      const k = id % 10, t = Math.min((id - 200) / 300, 1);
       const gA = (id * 3 + 1) % 5, gB = (gA + 2) % 5, gC = (gA + 4) % 5;
       const cells = function (count) {
         const r = rng(id), out = [];
@@ -329,11 +404,22 @@ const GOAL_TUNING = {
       if (k === 1 && id > 300) {                       // wind levels
         l.kind = "wind";
         l.wind = windRows(id > 450 ? 2 : 1);
-        l.goal = Math.round(l.goal * 1.45);
+        l.goal = Math.round(l.goal * (id > 500 ? 1.65 : 1.45));
         l.moves += 1;
       }
       if (id > 400 && (k === 3 || k === 5)) { l.chains = extraCells(3); l.moves += 3; }   // chains join collect / mixed
       if (id > 450 && (k === 7 || k === 9)) { l.wind = windRows(1); l.moves += 3; }        // wind joins collect / 2-hit ice
+
+      // ---- levels 501-1000: the mechanics start to combine ----
+      if (id > 500) {
+        if (k === 6 && id > 600) { l.wind = windRows(1); l.moves += 3; }                                   // cherries + wind
+        if (k === 2 && id > 600) { l.ice = (l.ice || []).concat(extraCells(3)); l.iceHp = l.iceHp || 1; l.moves += 3; }   // chains + ice
+        if (k === 2 && id > 800) { l.chains = l.chains.concat(extraCells(2)); l.moves += 2; }              // more chains
+        if (k === 1 && id > 700) { l.chains = extraCells(3); l.moves += 3; }                               // wind + chains
+        if (k === 3 && id > 700 && !l.wind) { l.wind = windRows(1); l.moves += 3; }                        // collect + wind
+        if (k === 0 && id > 800) { l.chains = (l.chains || []).concat(extraCells(3)); l.wind = windRows(2); l.moves += 5; }   // finales: everything
+        l.moves = Math.max(14, l.moves - Math.floor((id - 500) / 100) * 2);   // fewer moves as you go: -2 per 100 levels
+      }
       return;
     }
     if (id > 150) {                       // bonus chapters 16-20: five-level rotation

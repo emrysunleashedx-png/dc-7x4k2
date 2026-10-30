@@ -608,7 +608,7 @@ function fxConfetti(container, n) {
     s.style.animationDelay = (Math.random() * 0.6) + "s";
     s.style.animationIterationCount = "1";
     container.appendChild(s);
-    setTimeout(() => s.remove(), 3600);
+    setTimeout(() => { if (s.remove) s.remove(); }, 3600);
   }
 }
 function fxSpecial(idx, v) {

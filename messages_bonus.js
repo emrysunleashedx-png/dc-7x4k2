@@ -419,7 +419,7 @@ Object.assign(MESSAGES, {
   497: "Happily, heartbeat, tomorrow. Collect them. Seems fitting.",
   498: "Double ice. The last of it. Hit twice.",
   499: "One more level after this one. Take a breath.",
-  500: "Five hundred levels. I didn't think you'd make it here... no, I did. This game was only ever meant to bring you a little joy, and watching you play it has been the nicest part. No pressure, no expectations. Just thank you, Musu. Forever and ever can be as simple as this: you, a phone, and a few good gems."
+  500: "Level 500! I didn't think you'd make it here... no, I did. This game was only ever meant to bring you a little joy, and watching you play it has been the nicest part. And you're not done: five hundred more levels are waiting. No pressure, no expectations. Just thank you, Musu."
 });
 
 // ---- More hidden memories: one every 10th level from 160 to 500 ----
@@ -460,5 +460,5 @@ Object.assign(STORY_MOMENTS, {
   470: { title: "Rest", text: "Rest is not giving up. It is gathering strength for whatever comes next." },
   480: { title: "A New Morning", text: "Every morning is a quiet chance to begin again, with nobody keeping score." },
   490: { title: "Almost There", text: "Near the end of a long journey, it is worth slowing down. Take the last stretch gently and notice it." },
-  500: { title: "Forever and Ever", text: "This game was only ever a gift: no pressure, no expectation, just a small way of saying thank you for being you, and for letting it make you smile." }
+  500: { title: "Halfway Home", text: "Five hundred levels in, with five hundred still to go. The point was never the number. It was knowing someone was quietly cheering along the way." }
 });
