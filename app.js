@@ -22,7 +22,7 @@ const PLAYER_NAME = "Desire";
 const BIRTHDAY = {
   month: 11, day: 1,
   note: "Today is your day, so before anything else: I'm glad you were born. The world got a little warmer, a little funnier, and a lot more interesting when you arrived.\n\nI made this game one level at a time, hoping it would put a smile on your face on ordinary days. Today I hope it's just one small part of a day full of good things.\n\nI hope you get the quiet moments and the loud ones. The cake, the laughter, and the people who see how special you are. I hope you rest, and I hope you're as kind to yourself as you are to everyone else.\n\nNo pressure, no expectations. Just a gift from me, with all my best wishes.\n\nHappy birthday, Desire. 🎂💗",
-  gift: { coins: 500, gems: 10, hammers: 3, shuffles: 3, hints: 3 },
+  gift: { coins: 500, gems: 10, hammers: 3, shuffles: 3, hints: 3, bombs: 3, blasts: 3 },
   levelDays: 3,                                   // special level stays playable this many days (1 = birthday only)
   levelBonus: { coins: 300, gems: 5 }             // one-time extra reward for finishing it each year
 };
@@ -39,6 +39,10 @@ let birthdayShowing = false;
 let hammers = 3;
 let shuffles = 2;
 let hints = 2;
+let bombs = 1;            // 💣 booster: blast 3x3 where you tap
+let blasts = 1;           // 🌈 booster: wipe every gem of the tapped colour
+let bombMode = false, blastMode = false;
+let shopReturn = "screen-title";
 let iceGrid = [];
 let collected = {};
 let pendingDrops = null;
@@ -157,6 +161,16 @@ function playSound(type, chain) {
     osc.start(now); osc.stop(now + 0.3);
     vib([50, 30, 50]);
   }
+  else if (type === 'star') {
+    const base = 880 * (1 + (chain || 0) * 0.26);
+    [1, 2.01].forEach((m, k) => {
+      const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'sine'; osc.frequency.value = base * m;
+      gain.gain.setValueAtTime(k ? 0.04 : 0.09, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      osc.start(now); osc.stop(now + 0.55);
+    });
+  }
   else if (type === 'coin') {
     [988, 1319].forEach((freq, i) => {
       const t = now + i * 0.07;
@@ -229,17 +243,19 @@ function getWallet() {
   if (typeof p.hammers !== "number") p.hammers = 3;
   if (typeof p.shuffles !== "number") p.shuffles = 2;
   if (typeof p.hints !== "number") p.hints = 2;
+  if (typeof p.bombs !== "number") p.bombs = 1;
+  if (typeof p.blasts !== "number") p.blasts = 1;
   if (!p.stars || typeof p.stars !== "object") p.stars = {};
   return p;
 }
 function patchSave(patch) { const p = getWallet(); Object.assign(p, patch); saveProgress(p); return p; }
-function persistInventory() { patchSave({ hammers: hammers, shuffles: shuffles, hints: hints }); }
+function persistInventory() { patchSave({ hammers: hammers, shuffles: shuffles, hints: hints, bombs: bombs, blasts: blasts }); }
 function refreshWallet() {
   const w = getWallet();
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set("home-coins", w.coins.toLocaleString());
   set("shop-coins", w.coins.toLocaleString()); set("shop-gems", w.gems);
-  set("shop-hammers", w.hammers); set("shop-shuffles", w.shuffles); set("shop-hints", w.hints);
+  set("shop-hammers", w.hammers); set("shop-shuffles", w.shuffles); set("shop-hints", w.hints); set("shop-bombs", w.bombs); set("shop-blasts", w.blasts);
 }
 function starsFor(movesRemaining, totalMoves) {
   const ratio = totalMoves > 0 ? movesRemaining / totalMoves : 0;
@@ -252,6 +268,10 @@ const SHOP_ITEMS = [
   { id: "h3", icon: "🔨", name: "Hammer ×3",      desc: "Best value",           cost: 150, give: { hammers: 3 } },
   { id: "s1", icon: "🔀", name: "Shuffle",        desc: "Mix up the board",     cost: 50,  give: { shuffles: 1 } },
   { id: "s3", icon: "🔀", name: "Shuffle ×3",     desc: "Best value",           cost: 125, give: { shuffles: 3 } },
+  { id: "b1", icon: "💣", name: "Bomb",           desc: "Blast a 3×3 area",     cost: 70,  give: { bombs: 1 } },
+  { id: "b3", icon: "💣", name: "Bomb ×3",        desc: "Best value",           cost: 180, give: { bombs: 3 } },
+  { id: "c1", icon: "🌈", name: "Color Blast",    desc: "Wipe one whole colour", cost: 90, give: { blasts: 1 } },
+  { id: "c3", icon: "🌈", name: "Color Blast ×3", desc: "Best value",           cost: 230, give: { blasts: 3 } },
   { id: "i1", icon: "💡", name: "Hint",           desc: "Shows a good swap",    cost: 40,  give: { hints: 1 } },
   { id: "i3", icon: "💡", name: "Hint ×3",        desc: "Best value",           cost: 100, give: { hints: 3 } },
   { id: "bundle", icon: "🎀", name: "Care Package", desc: "2 hammers + 2 shuffles + 2 hints", cost: 230, give: { hammers: 2, shuffles: 2, hints: 2 } },
@@ -289,7 +309,7 @@ function buyItem(item) {
 // ---- DAILY REWARD ---------------------------------------------------
 const DAILY_REWARDS = [
   { coins: 50 }, { coins: 60 }, { coins: 80 }, { coins: 100 }, { coins: 120, gems: 1 }, { coins: 150 },
-  { coins: 250, gems: 3, hammers: 1, shuffles: 1 }
+  { coins: 250, gems: 3, hammers: 1, shuffles: 1, bombs: 1, blasts: 1 }
 ];
 function dateKey(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
 function dailyState() {
@@ -303,7 +323,7 @@ function dailyState() {
   return { claimable, streak, today };
 }
 function prizeText(r) {
-  return ["🪙 " + r.coins, r.gems ? "💎 " + r.gems : "", r.hammers ? "🔨 " + r.hammers : "", r.shuffles ? "🔀 " + r.shuffles : ""].filter(Boolean).join("  ");
+  return ["🪙 " + r.coins, r.gems ? "💎 " + r.gems : "", r.hammers ? "🔨 " + r.hammers : "", r.shuffles ? "🔀 " + r.shuffles : "", r.bombs ? "💣 " + r.bombs : "", r.blasts ? "🌈 " + r.blasts : ""].filter(Boolean).join("  ");
 }
 function updateDailyButton() {
   const btn = document.getElementById("btn-daily");
@@ -335,7 +355,7 @@ function updateBirthdayBanner() {
   if (b) b.style.display = isBirthdayToday() ? "block" : "none";
 }
 function giftText(g) {
-  return ["🪙 " + g.coins, "💎 " + g.gems, "🔨 " + g.hammers, "🔀 " + g.shuffles, "💡 " + g.hints].join("   ");
+  return ["🪙 " + g.coins, "💎 " + g.gems, "🔨 " + g.hammers, "🔀 " + g.shuffles, "💡 " + g.hints, "💣 " + g.bombs, "🌈 " + g.blasts].join("   ");
 }
 function showBirthday() {
   const claimed = !birthdayUnclaimed();
@@ -374,6 +394,7 @@ function claimBirthday() {
       patchSave({
         coins: w.coins + g.coins, gems: w.gems + g.gems,
         hammers: w.hammers + g.hammers, shuffles: w.shuffles + g.shuffles, hints: w.hints + g.hints,
+        bombs: w.bombs + g.bombs, blasts: w.blasts + g.blasts,
         birthdayClaimed: new Date().getFullYear()
       });
     }
@@ -407,6 +428,7 @@ function claimDaily() {
   patchSave({
     coins: w.coins + r.coins, gems: w.gems + (r.gems || 0),
     hammers: w.hammers + (r.hammers || 0), shuffles: w.shuffles + (r.shuffles || 0),
+    bombs: w.bombs + (r.bombs || 0), blasts: w.blasts + (r.blasts || 0),
     dailyLast: s.today, dailyStreak: s.streak
   });
   playSound("coin"); vib([40, 30, 40]);
@@ -458,7 +480,7 @@ function renderBoard() {
     const tile = document.createElement("div");
     tile.className = "tile";
     if (i === selectedIndex) tile.classList.add("selected");
-    if (hammerMode) tile.classList.add("hammer-target");
+    if (hammerMode || bombMode || blastMode) tile.classList.add("hammer-target");
     if (iceGrid[i] > 0) { tile.classList.add("ice"); tile.dataset.ice = iceGrid[i]; }
     if (lockGrid[i]) tile.classList.add("locked");
     if (currentLevel && currentLevel.wind) {
@@ -501,6 +523,114 @@ function renderBoard() {
 
     boardEl.appendChild(tile);
   }
+}
+
+// ---- FX ENGINE: bursts, glow, shakes, beams, rings ----------------------
+const GEM_COLORS = ["#4aa8ff", "#ff5c9a", "#ffc933", "#4cc97a", "#a45cf0"];
+function fxLayer() { return document.getElementById("fx-layer"); }
+function fxAdd(el, ms) {
+  const L = fxLayer(); if (!L) return;
+  try { L.appendChild(el); setTimeout(() => { if (el.remove) el.remove(); }, ms); } catch (e) {}
+}
+function cellCenter(idx) {
+  const L = fxLayer(), boardEl = document.getElementById("board");
+  const tile = boardEl && boardEl.children && boardEl.children[idx];
+  if (!L || !tile) return null;
+  const lr = L.getBoundingClientRect(), tr = tile.getBoundingClientRect();
+  return { x: tr.left - lr.left + tr.width / 2, y: tr.top - lr.top + tr.height / 2, size: tr.width };
+}
+function fxBurst(idx, type, n) {
+  const c = cellCenter(idx); if (!c) return;
+  const color = GEM_COLORS[type] || "#ffffff";
+  const glow = document.createElement("div");
+  glow.className = "fx-glow";
+  glow.style.cssText = "left:" + c.x + "px;top:" + c.y + "px;width:" + (c.size * 1.5) + "px;height:" + (c.size * 1.5) + "px;background:radial-gradient(circle," + color + "cc,transparent 70%)";
+  fxAdd(glow, 480);
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement("div");
+    p.className = "fx-spark";
+    const ang = Math.random() * Math.PI * 2, dist = c.size * (0.6 + Math.random() * 1.0), s = 5 + Math.random() * 6;
+    p.style.cssText = "left:" + c.x + "px;top:" + c.y + "px;width:" + s + "px;height:" + s + "px;background:" + (i % 3 === 0 ? "#fff" : color) + ";box-shadow:0 0 8px " + color;
+    p.style.setProperty("--tx", Math.cos(ang) * dist + "px");
+    p.style.setProperty("--ty", Math.sin(ang) * dist + "px");
+    fxAdd(p, 680);
+  }
+}
+// bursts for a list of cells (capped so big blasts stay smooth on phones)
+function fxCells(cells, perCell) {
+  const cap = 34, step = cells.length > cap ? Math.ceil(cells.length / cap) : 1;
+  cells.forEach((i, k) => {
+    if (k % step) return;
+    const v = board[i];
+    if (v < 0 || v === ITEM) return;
+    fxBurst(i, v === 200 ? Math.floor(Math.random() * 5) : gemType(v), perCell);
+  });
+}
+function fxShake(level) {
+  const w = document.querySelector(".board-wrapper"); if (!w) return;
+  ["shake-1", "shake-2", "shake-3"].forEach(c => w.classList.remove(c));
+  void w.offsetWidth; w.classList.add("shake-" + level);
+  setTimeout(() => w.classList.remove("shake-" + level), 480);
+}
+function fxFlash(color) {
+  const f = document.createElement("div");
+  f.className = "fx-flash"; f.style.background = color;
+  fxAdd(f, 520);
+}
+function fxRing(idx, scale) {
+  const c = cellCenter(idx); if (!c) return;
+  const r = document.createElement("div");
+  r.className = "fx-ring";
+  r.style.cssText = "left:" + c.x + "px;top:" + c.y + "px;width:" + c.size + "px;height:" + c.size + "px;--s:" + scale;
+  fxAdd(r, 620);
+}
+function fxBeam(idx, vertical) {
+  const c = cellCenter(idx), L = fxLayer(); if (!c || !L) return;
+  const b = document.createElement("div");
+  b.className = "fx-beam " + (vertical ? "v" : "h");
+  if (vertical) b.style.cssText = "left:" + (c.x - c.size / 2) + "px;top:0;width:" + c.size + "px;height:100%";
+  else b.style.cssText = "top:" + (c.y - c.size / 2) + "px;left:0;height:" + c.size + "px;width:100%";
+  fxAdd(b, 560);
+}
+function fxRainbow() {
+  const f = document.createElement("div");
+  f.className = "fx-rainbow";
+  fxAdd(f, 720);
+}
+function fxConfetti(container, n) {
+  const bits = ["🎉", "✨", "💖", "⭐", "🎊"];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement("span");
+    s.className = "confetti-bit"; s.textContent = bits[i % bits.length];
+    s.style.left = Math.random() * 100 + "%";
+    s.style.fontSize = (14 + Math.random() * 18) + "px";
+    s.style.animationDuration = (1.6 + Math.random() * 1.4) + "s";
+    s.style.animationDelay = (Math.random() * 0.6) + "s";
+    s.style.animationIterationCount = "1";
+    container.appendChild(s);
+    setTimeout(() => s.remove(), 3600);
+  }
+}
+function fxSpecial(idx, v) {
+  if (v === 200) { fxRainbow(); fxShake(2); }
+  else if (v >= 400) { fxRing(idx, 3.4); fxShake(2); }
+  else if (v >= 300) { fxBeam(idx, true); fxShake(1); }
+  else if (v >= 100) { fxBeam(idx, false); fxShake(1); }
+}
+function celebrateWin() {
+  playSound("win"); vib([60, 40, 60]);
+  fxShake(2); fxFlash("rgba(255,244,200,.65)");
+  const all = []; for (let i = 0; i < board.length; i++) all.push(i);
+  fxCells(all, 3);
+  const L = fxLayer(); if (L) fxConfetti(L, 26);
+}
+function countUp(el, target, prefix) {
+  if (!el) return;
+  let n = 0; const steps = 18;
+  const t = setInterval(() => {
+    n++; el.textContent = prefix + Math.round(target * Math.min(n / steps, 1));
+    if (n >= steps) clearInterval(t);
+  }, 38);
 }
 
 // ---- PARTICLE EXPLOSIONS -------------------------------------------
@@ -556,7 +686,7 @@ function onTouchStart(e, index) {
   touchStartX = clientX; touchStartY = clientY;
   touchStartIndex = index; isSwiping = false;
 
-  if (hammerMode) {
+  if (hammerMode || bombMode || blastMode) {
     onTileTap(index);
     touchStartIndex = null;
     return;
@@ -677,7 +807,8 @@ async function attemptSwapInner(a, b) {
     const list = [rainbowIdx];
     for (let i = 0; i < board.length; i++) if (color === 200 || gemType(board[i]) === color) list.push(i);
     const preset = { idx: rainbowIdx, color: color };
-    if (otherVal >= 100 && otherVal !== 200) { preset.mega = otherVal; showPopup("Mega combo!", 40); }
+    if (otherVal >= 100 && otherVal !== 200) { preset.mega = otherVal; showPopup("Mega combo!", 40); fxShake(3); fxFlash("rgba(255,230,255,.5)"); }
+    fxRainbow();
     await resolveMatches([...new Set(list)], preset);
     return;
   }
@@ -686,7 +817,7 @@ async function attemptSwapInner(a, b) {
   if (board[a] >= 100 && board[b] >= 100) {
     movesLeft--; windDue = true; updateHUD();
     showPopup(["", "Cross blast!", "Big blast!", "Mega bomb!"][(board[a] >= 400 && board[b] >= 400) ? 3 : ((board[a] >= 400 || board[b] >= 400) ? 2 : 1)], 40);
-    playSound('boom');
+    playSound('boom'); fxRing(b, 4.2); fxShake(3); fxFlash("rgba(255,240,200,.5)");
     const cells = comboCells(b, board[a], board[b]);
     await resolveMatches([...new Set([a, b, ...cells])]);
     return;
@@ -713,9 +844,40 @@ async function onTileTap(index) {
   if (hammerMode) {
     hammerMode = false; hammers--; persistInventory(); isBusy = true;
     updateHUD(); playSound('pop');
+    fxCells([index], 8); fxShake(1);
     clearAndCollapse([index]); renderBoard();
-    createParticleExplosion(index);
     await sleep(340);
+    while (collectBottomItems()) { playSound('coin'); renderBoard(); updateHUD(); await sleep(340); }
+    await resolveMatches(findMatches());
+    return;
+  }
+
+  if ((bombMode || blastMode) && (board[index] === ITEM || board[index] === 200)) return;
+  if (bombMode) {                                    // 💣 3x3 blast
+    bombMode = false; bombs--; persistInventory(); isBusy = true;
+    updateHUD(); playSound('boom');
+    const area = specialArea(index, 400).filter(i => board[i] !== ITEM);
+    const all = expandClears(area, null);
+    fxRing(index, 3.4); fxShake(2); fxCells(all, 5);
+    cleared += all.length;
+    clearAndCollapse(all); renderBoard(); updateHUD();
+    await sleep(380);
+    while (collectBottomItems()) { playSound('coin'); renderBoard(); updateHUD(); await sleep(340); }
+    await resolveMatches(findMatches());
+    return;
+  }
+  if (blastMode) {                                   // 🌈 colour blast
+    const color = gemType(board[index]);
+    blastMode = false; blasts--; persistInventory(); isBusy = true;
+    updateHUD(); playSound('boom');
+    const list = [];
+    for (let i = 0; i < board.length; i++) if (board[i] !== ITEM && board[i] !== 200 && gemType(board[i]) === color) list.push(i);
+    const all = expandClears(list, null);
+    fxRainbow(); fxShake(2); fxCells(all, 5);
+    cleared += all.length;
+    clearAndCollapse(all); renderBoard(); updateHUD();
+    await sleep(380);
+    while (collectBottomItems()) { playSound('coin'); renderBoard(); updateHUD(); await sleep(340); }
     await resolveMatches(findMatches());
     return;
   }
@@ -1013,15 +1175,20 @@ async function resolveMatchesInner(initialMatches, preset) {
 
       let specialTriggered = false;
       matches.forEach(idx => {
-        if (board[idx] >= 100) { specialTriggered = true; createParticleExplosion(idx); }
+        if (board[idx] >= 100) { specialTriggered = true; fxSpecial(idx, board[idx]); }
       });
       if (specialTriggered) playSound('boom');
+      fxCells(matches, 5);
+      if (chain >= 3) { fxShake(chain >= 4 ? 2 : 1); fxFlash("rgba(255,255,255,.35)"); }
+      if (chain >= 5) { const L = fxLayer(); if (L) fxConfetti(L, 14); }
+      else if (matches.length >= 6) fxShake(1);
 
       cleared += matches.length;
       updateHUD();
       await animateMatches(matches);
 
       const newClears = expandClears(matches, preset);
+      if (newClears.length > matches.length) fxCells(newClears.filter(i => matches.indexOf(i) === -1), 4);
       cleared += newClears.length - matches.length;
       preset = null;
 
@@ -1070,6 +1237,14 @@ function updateHUD() {
   document.getElementById("count-hammer").textContent = hammers;
   document.getElementById("count-shuffle").textContent = shuffles;
   document.getElementById("count-hint").textContent = hints;
+  document.getElementById("count-bomb").textContent = bombs;
+  document.getElementById("count-blast").textContent = blasts;
+  [["btn-bomb", bombs, bombMode], ["btn-blast", blasts, blastMode]].forEach(([id, n, on]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.classList.toggle("disabled", n <= 0);
+    b.classList.toggle("active", !!on);
+  });
   
   const btnHammer = document.getElementById("btn-hammer");
   const btnShuffle = document.getElementById("btn-shuffle");
@@ -1085,7 +1260,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 let levelOver = false;
 function checkEndConditions() {
   if (levelOver || !currentLevel) return;
-  if (goalsMet()) { levelOver = true; setTimeout(showWin, 300); }
+  if (goalsMet()) { levelOver = true; setTimeout(() => { celebrateWin(); setTimeout(showWin, 950); }, 300); }
   else if (movesLeft <= 0) { levelOver = true; setTimeout(showLose, 300); }
 }
 
@@ -1128,8 +1303,11 @@ function showWin() {
   ];
   const praiseEl = document.getElementById("win-praise");
   if (praiseEl) praiseEl.textContent = praise[Math.floor(Math.random() * praise.length)];
-  document.getElementById("reward-coins").textContent = "+" + coinsEarned;
-  document.getElementById("reward-gems").textContent = "+" + gemsEarned;
+  countUp(document.getElementById("reward-coins"), coinsEarned, "+");
+  countUp(document.getElementById("reward-gems"), gemsEarned, "+");
+  const wc = document.getElementById("win-confetti");
+  if (wc) { wc.innerHTML = ""; fxConfetti(wc, 40); setTimeout(() => fxConfetti(wc, 24), 1200); }
+  for (let i = 0; i < stars; i++) setTimeout(() => playSound("star", i), 450 + i * 320);
   updateHomeBadge();
   showScreen("screen-win");
 }
@@ -1211,7 +1389,7 @@ function startLevel(id) {
   const level = getLevelById(id);
   if (!level) return;
   currentLevel = level; movesLeft = level.moves; cleared = 0; goal = level.goal;
-  const wallet = getWallet(); hammers = wallet.hammers; shuffles = wallet.shuffles; hints = wallet.hints; hammerMode = false; isPaused = false;
+  const wallet = getWallet(); hammers = wallet.hammers; shuffles = wallet.shuffles; hints = wallet.hints; bombs = wallet.bombs; blasts = wallet.blasts; hammerMode = false; bombMode = false; blastMode = false; isPaused = false;
   document.getElementById("pause-modal").classList.remove("show");
   iceGrid = new Array(SIZE * SIZE).fill(0);
   if (level.ice) level.ice.forEach(i => { iceGrid[i] = level.iceHp || 1; });
@@ -1324,62 +1502,123 @@ function goToNextLevel() {
   else showScreen("screen-title");
 }
 
+// ---- STORY WORLD MAP: a winding path per chapter, bottom (start) to top ----
+const MAP_NODE_GAP = 76, MAP_PAD_TOP = 78, MAP_PAD_BOTTOM = 50;
+function isHardLevel(l) {
+  return !!(l.iceHp === 2 || (l.items && l.items >= 3) || (l.wind && l.wind.length > 1) || (l.chains && l.chains.length >= 7) || (l.id > 150 && l.id % 10 === 0));
+}
 function buildMap() {
-  const mapContainer = document.getElementById("map-container");
-  if (!mapContainer) return;
-  mapContainer.innerHTML = "";
+  const box = document.getElementById("map-container");
+  if (!box) return;
+  box.innerHTML = "";
   const progress = loadProgress();
-
+  const moments = Array.isArray(progress.unlockedMoments) ? progress.unlockedMoments : [];
+  const svgNS = "http://www.w3.org/2000/svg";
   let hiddenChapters = 0;
-  CHAPTERS.forEach(chapter => {
-    const chapterLevels = LEVELS.filter(l => l.chapter === chapter.id);
-    if (chapterLevels.length === 0) return;
-    // keep the map light: show unlocked chapters plus one locked teaser
-    const prevChapterStart = LEVELS.find(l => l.chapter === chapter.id - 1);
-    const reachable = chapterLevels[0].id <= progress.highestUnlocked || (prevChapterStart && prevChapterStart.id <= progress.highestUnlocked);
+
+  CHAPTERS.forEach(ch => {
+    const lvls = LEVELS.filter(l => l.chapter === ch.id);
+    if (lvls.length === 0) return;
+    const prevStart = LEVELS.find(l => l.chapter === ch.id - 1);
+    const reachable = lvls[0].id <= progress.highestUnlocked || (prevStart && prevStart.id <= progress.highestUnlocked);
     if (!reachable) { hiddenChapters++; return; }
 
-    const group = document.createElement("div");
-    group.className = "chapter-group";
-    group.innerHTML = `<div class="chapter-header"><span>${chapter.emoji}</span> <span>${chapter.title}</span></div>`;
-    const grid = document.createElement("div");
-    grid.className = "level-grid";
+    const completed = lvls.filter(l => l.id < progress.highestUnlocked).length;
+    const sec = document.createElement("section");
+    sec.className = "world-chapter";
+    sec.style.setProperty("--h", (ch.id * 47) % 360);
 
-    chapterLevels.forEach(lvl => {
-      const btn = document.createElement("button");
-      btn.className = "level-btn";
-      btn.textContent = lvl.id;
+    const banner = document.createElement("div");
+    banner.className = "world-banner";
+    banner.innerHTML = '<span class="wb-emoji">' + ch.emoji + '</span><div class="wb-text"><small>' + (ch.bonus ? "Bonus · " : "") + "Chapter " + ch.id +
+      "</small><b>" + ch.title + '</b></div><span class="wb-count">' + completed + "/" + lvls.length + "</span>";
+
+    const H = MAP_PAD_TOP + (lvls.length - 1) * MAP_NODE_GAP + MAP_PAD_BOTTOM;
+    const area = document.createElement("div");
+    area.className = "world-area";
+    area.style.height = H + "px";
+
+    const pts = lvls.map((l, i) => ({
+      x: 50 + 28 * Math.sin(i * 1.05 + ch.id * 0.7),
+      y: H - MAP_PAD_BOTTOM - i * MAP_NODE_GAP
+    }));
+
+    // dotted / golden path between nodes
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class", "world-path");
+    svg.setAttribute("viewBox", "0 0 100 " + H);
+    svg.setAttribute("preserveAspectRatio", "none");
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i], p1 = pts[i + 1], k = (p0.y - p1.y) * 0.5;
+      const path = document.createElementNS(svgNS, "path");
+      path.setAttribute("d", "M" + p0.x + " " + p0.y + " C" + p0.x + " " + (p0.y - k) + " " + p1.x + " " + (p1.y + k) + " " + p1.x + " " + p1.y);
+      if (lvls[i].id < progress.highestUnlocked) path.setAttribute("class", "done");
+      svg.appendChild(path);
+    }
+    area.appendChild(svg);
+
+    // scenery
+    let seed = ch.id * 31 + 7;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const deco = [ch.emoji, "🌳", "🌸", "🍃", "✨", "🌿"];
+    for (let d = 0; d < 9; d++) {
+      const s = document.createElement("span");
+      s.className = "world-deco";
+      s.textContent = deco[Math.floor(rnd() * deco.length)];
+      s.style.left = (d % 2 ? 2 + rnd() * 10 : 86 + rnd() * 10) + "%";
+      s.style.top = (30 + rnd() * (H - 60)) + "px";
+      s.style.fontSize = (20 + rnd() * 16) + "px";
+      area.appendChild(s);
+    }
+
+    lvls.forEach((lvl, i) => {
+      const node = document.createElement("button");
+      node.className = "world-node";
+      node.style.left = pts[i].x + "%";
+      node.style.top = pts[i].y + "px";
+      node.textContent = lvl.id;
       const earned = (progress.stars && progress.stars[lvl.id]) || 0;
-      if (earned > 0) {
-        const tag = document.createElement("span");
-        tag.className = "level-stars"; tag.textContent = "★".repeat(earned);
-        btn.appendChild(tag);
+      if (lvl.id % 10 === 0) node.classList.add("finale");
+      if (lvl.id === progress.highestUnlocked) node.classList.add("current");
+      if (lvl.id < progress.highestUnlocked) node.classList.add("done");
+
+      const addBadge = (cls, text) => { const b = document.createElement("span"); b.className = cls; b.textContent = text; node.appendChild(b); };
+      if (earned > 0) addBadge("wn-stars", "★".repeat(earned));
+      if (isHardLevel(lvl)) addBadge("wn-hard", "🔥");
+      else if (lvl.id % 10 === 0) addBadge("wn-hard", "👑");
+      if (STORY_MOMENTS[lvl.id]) addBadge("wn-moment" + (moments.includes(lvl.id) ? " got" : ""), "💌");
+      if (lvl.id === progress.highestUnlocked) {
+        const pin = document.createElement("span");
+        pin.className = "wn-pin"; pin.style.backgroundImage = "url('assets/desire.jpg')";
+        node.appendChild(pin);
       }
-      if (lvl.id === progress.highestUnlocked) btn.classList.add("current");
+
       if (lvl.id <= progress.highestUnlocked) {
-        btn.classList.add("unlocked");
-        btn.onclick = () => startLevel(lvl.id);
+        node.classList.add("unlocked");
+        node.onclick = () => { initAudio(); startLevel(lvl.id); };
       } else {
-        btn.classList.add("locked");
-        btn.onclick = () => alert("Level locked! Finish the previous levels first.");
+        node.classList.add("locked");
+        node.onclick = () => { playSound("swap"); showPopup("🔒 Finish the earlier levels first", 20); };
       }
-      grid.appendChild(btn);
+      area.appendChild(node);
     });
-    group.appendChild(grid);
-    mapContainer.appendChild(group);
+
+    sec.appendChild(area);
+    sec.appendChild(banner);      // banner sits at the bottom, where the chapter starts
+    box.appendChild(sec);
   });
+
   if (hiddenChapters > 0) {
     const more = document.createElement("div");
-    more.className = "chapter-header";
-    more.style.justifyContent = "center";
+    more.className = "world-more";
     more.textContent = "🔒 " + hiddenChapters + " more chapters to discover";
-    mapContainer.appendChild(more);
+    box.appendChild(more);
   }
 }
 
 function scrollMapToCurrent() {
   requestAnimationFrame(() => {
-    const target = document.querySelector("#map-container .level-btn.current");
+    const target = document.querySelector("#map-container .world-node.current");
     if (target && target.scrollIntoView) target.scrollIntoView({ block: "center" });
   });
 }
@@ -1424,14 +1663,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-hammer").addEventListener("click", () => {
-    if (hammers > 0) { hammerMode = !hammerMode; selectedIndex = null; updateHUD(); renderBoard(); }
+    if (hammers > 0) { const was = hammerMode; hammerMode = false; bombMode = false; blastMode = false; hammerMode = !was; selectedIndex = null; updateHUD(); renderBoard(); }
+  });
+
+  document.getElementById("btn-bomb").addEventListener("click", () => {
+    if (bombs <= 0 || isBusy || isPaused || levelOver) return;
+    const was = bombMode; hammerMode = false; bombMode = false; blastMode = false; bombMode = !was; selectedIndex = null;
+    if (bombMode) showPopup("Tap a gem to blast 3×3", 22);
+    updateHUD(); renderBoard();
+  });
+  document.getElementById("btn-blast").addEventListener("click", () => {
+    if (blasts <= 0 || isBusy || isPaused || levelOver) return;
+    const was = blastMode; hammerMode = false; bombMode = false; blastMode = false; blastMode = !was; selectedIndex = null;
+    if (blastMode) showPopup("Tap a colour to wipe it", 22);
+    updateHUD(); renderBoard();
   });
 
   document.getElementById("btn-hint").addEventListener("click", () => {
     if (hints <= 0 || isBusy || isPaused || levelOver) return;
     const swap = findValidSwap();
     if (!swap) return;
-    hints--; persistInventory(); hammerMode = false; selectedIndex = null;
+    hints--; persistInventory(); hammerMode = false; bombMode = false; blastMode = false; selectedIndex = null;
     updateHUD(); renderBoard(); playSound('pop');
     const tiles = document.querySelectorAll("#board .tile");
     swap.forEach(i => { if (tiles[i]) tiles[i].classList.add("hint"); });
@@ -1447,10 +1699,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const openShop = () => { initAudio(); playSound('pop'); buildShop(); showScreen("screen-shop"); };
+  const openShop = (from) => { shopReturn = (typeof from === "string") ? from : "screen-title"; initAudio(); playSound('pop'); buildShop(); showScreen("screen-shop"); };
   document.getElementById("btn-shop").addEventListener("click", openShop);
   document.getElementById("btn-coins-plus").addEventListener("click", openShop);
-  document.getElementById("btn-shop-back").addEventListener("click", () => { showScreen("screen-title"); updateHomeBadge(); });
+  document.getElementById("btn-shop-back").addEventListener("click", () => {
+    if (shopReturn === "screen-map") { buildMap(); showScreen("screen-map"); scrollMapToCurrent(); }
+    else { showScreen("screen-title"); updateHomeBadge(); }
+  });
+  document.getElementById("btn-map-store").addEventListener("click", () => openShop("screen-map"));
 
   document.getElementById("btn-extra-moves").addEventListener("click", buyExtraMoves);
 

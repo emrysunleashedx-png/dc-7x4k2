@@ -83,6 +83,7 @@
     <!-- Map screen -->
     <section id="screen-map" class="screen">
       <button class="back-btn" id="btn-map-back" aria-label="Back to title">✕</button>
+      <button class="map-store" id="btn-map-store" aria-label="Open store">🛍️ Store</button>
       <h2 class="map-title">Adventure Map</h2>
       <div id="map-container" class="map-container"></div>
     </section>
@@ -116,12 +117,21 @@
       <div class="board-wrapper">
         <div id="board"></div>
         <canvas id="swipe-canvas"></canvas>
+        <div id="fx-layer"></div>
       </div>
 
       <div class="booster-bar">
         <button class="booster-btn" id="btn-hammer">
           <span class="booster-icon">🔨</span>
           <span class="booster-count" id="count-hammer">3</span>
+        </button>
+        <button class="booster-btn" id="btn-bomb">
+          <span class="booster-icon">💣</span>
+          <span class="booster-count" id="count-bomb">1</span>
+        </button>
+        <button class="booster-btn" id="btn-blast">
+          <span class="booster-icon">🌈</span>
+          <span class="booster-count" id="count-blast">1</span>
         </button>
         <button class="booster-btn" id="btn-hint">
           <span class="booster-icon">💡</span>
@@ -138,12 +148,13 @@
     <section id="screen-shop" class="screen">
       <button class="back-btn" id="btn-shop-back" aria-label="Back to title">✕</button>
       <h2 class="map-title">Shop</h2>
-      <div class="shop-wallet"><span>🪙 <b id="shop-coins">0</b></span><span>💎 <b id="shop-gems">0</b></span><span>🔨 <b id="shop-hammers">0</b></span><span>🔀 <b id="shop-shuffles">0</b></span><span>💡 <b id="shop-hints">0</b></span></div>
+      <div class="shop-wallet"><span>🪙 <b id="shop-coins">0</b></span><span>💎 <b id="shop-gems">0</b></span><span>🔨 <b id="shop-hammers">0</b></span><span>🔀 <b id="shop-shuffles">0</b></span><span>💡 <b id="shop-hints">0</b></span><span>💣 <b id="shop-bombs">0</b></span><span>🌈 <b id="shop-blasts">0</b></span></div>
       <div id="shop-container" class="shop-container"></div>
     </section>
 
     <!-- Win screen -->
     <section id="screen-win" class="screen">
+      <div class="chapter-confetti" id="win-confetti"></div>
       <div class="win-avatar" style="background-image: url('assets/desire.jpg');"></div>
       <p class="win-praise" id="win-praise"></p>
       <div class="win-banner"><h1>Level<br>Complete!</h1></div>

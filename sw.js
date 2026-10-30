@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cascade-v4';
+const CACHE_NAME = 'cascade-v5';
 const ASSETS = [
   './', './index.html', './style.css', './app.js', './levels.js', './messages.js', './messages_bonus.js',
   './icon.svg', './manifest.json',
