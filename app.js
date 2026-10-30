@@ -1347,6 +1347,11 @@ function buildMemories() {
   const progress = loadProgress();
   const unlocked = Array.isArray(progress.unlockedMoments) ? progress.unlockedMoments : [];
   container.innerHTML = "";
+  const total = Object.keys(STORY_MOMENTS).length;
+  const counter = document.createElement("p");
+  counter.className = "memory-count";
+  counter.textContent = "💌 " + unlocked.filter(id => STORY_MOMENTS[id]).length + " / " + total + " memories unlocked";
+  container.appendChild(counter);
   Object.keys(STORY_MOMENTS).map(Number).sort((a,b)=>a-b).forEach(id => {
     const memory = STORY_MOMENTS[id];
     const card = document.createElement("article");

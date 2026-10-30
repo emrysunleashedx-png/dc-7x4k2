@@ -421,3 +421,44 @@ Object.assign(MESSAGES, {
   499: "One more level after this one. Take a breath.",
   500: "Five hundred levels. I didn't think you'd make it here... no, I did. This game was only ever meant to bring you a little joy, and watching you play it has been the nicest part. No pressure, no expectations. Just thank you, Musu. Forever and ever can be as simple as this: you, a phone, and a few good gems."
 });
+
+// ---- More hidden memories: one every 10th level from 160 to 500 ----
+// These unlock on the 💌 Unlocked Memories screen. They are written in the same gentle, general voice as the
+// original 15. They are PLACEHOLDERS: swap any of them for a real moment of yours (title + text), same format.
+Object.assign(STORY_MOMENTS, {
+  160: { title: "Sweet Little Things", text: "Not every good memory is a big one. Some are as small as a laugh at the right moment, and they last longer than anyone expects." },
+  170: { title: "After the Lanterns Went Out", text: "The best part of a quiet evening is not the plan. It is the feeling that nothing needs to be proven to anyone." },
+  180: { title: "Starlight on Still Water", text: "Some kindness is loud, and some is simply staying close when things are calm. Both are worth remembering." },
+  190: { title: "Petals in the Wind", text: "Things change and seasons turn. What stays is the care that was put into them." },
+  200: { title: "Still Playing", text: "Two hundred levels in, the game is still going, and so is the hope behind it: that this has been a good thing to carry around." },
+  210: { title: "Colours After the Rain", text: "Hard days are not wasted. They are part of why the good ones shine the way they do." },
+  220: { title: "Ripples", text: "A small, steady kindness spreads further than it seems. It can reach people long after it was given." },
+  230: { title: "Above the Noise", text: "Sometimes the best view comes from stepping back and letting things be quiet for a while." },
+  240: { title: "Sweet, Not Rushed", text: "The nicest things are never rushed. They take their time, and they are better for it." },
+  250: { title: "Halfway There", text: "Halfway is a good place to turn around and look. The distance covered is real, and it was covered one step at a time." },
+  260: { title: "Through the Heat", text: "Hard stretches burn away what is not needed and leave what really matters. Remember what stayed." },
+  270: { title: "What Sparkles Inside", text: "The things worth finding are often hidden below the surface, and found by those patient enough to look." },
+  280: { title: "Soft Light", text: "Gentleness is not weakness. It is one of the quieter kinds of strength." },
+  290: { title: "Every Tick Counts", text: "No one's time is wasted when it is spent on something that makes them smile." },
+  300: { title: "Three Hundred", text: "Three hundred levels is a lot of small choices to keep going. Each one counted, even the ones nobody saw." },
+  310: { title: "Up Here", text: "From a high place, worries look smaller and the path looks clearer. It is worth climbing now and then." },
+  320: { title: "Let Go and Fly", text: "Some things fly best when you stop gripping them so tightly." },
+  330: { title: "Warm From the Oven", text: "Comfort is simple: something warm, something kind, and no need to explain either." },
+  340: { title: "The Real Treasure", text: "It was never the loot. It was the company, the laughter, and the story told afterwards." },
+  350: { title: "Quiet in the Trees", text: "In a quiet place, thoughts settle. It becomes easier to hear what you actually feel." },
+  360: { title: "Water in the Desert", text: "After a long dry stretch, even a small piece of good news tastes like relief. Hold on to those." },
+  370: { title: "Harvest", text: "What is planted with patience grows in its own time. Gathering it is a joy that cannot be hurried." },
+  380: { title: "Pages", text: "Everyone writes their own story, and the best chapters are rarely the ones planned in advance." },
+  390: { title: "The Best Ride", text: "The lights and the noise are fun, but what stays with you is who you shared the evening with." },
+  400: { title: "Four Hundred", text: "A hundred levels to go, and no rush at all. The point was never the number. It was the company along the way." },
+  410: { title: "Northern Lights", text: "Beautiful things often appear when it is darkest. It helps to keep looking up." },
+  420: { title: "Brave Little Flame", text: "Courage is not the absence of fear. It is doing the next small thing anyway." },
+  430: { title: "Above the City", text: "Even in a loud, busy world, there are quiet places where a person can simply breathe." },
+  440: { title: "The Long Road", text: "A long road is made of ordinary steps. Walking it, one after another, is already an achievement." },
+  450: { title: "What Grew", text: "Look at what has grown over time: patience, humour, resilience. None of it happened overnight." },
+  460: { title: "Warm in the Cold", text: "The coldest places are made bearable by small warmths: a joke, a message, a moment of being understood." },
+  470: { title: "Rest", text: "Rest is not giving up. It is gathering strength for whatever comes next." },
+  480: { title: "A New Morning", text: "Every morning is a quiet chance to begin again, with nobody keeping score." },
+  490: { title: "Almost There", text: "Near the end of a long journey, it is worth slowing down. Take the last stretch gently and notice it." },
+  500: { title: "Forever and Ever", text: "This game was only ever a gift: no pressure, no expectation, just a small way of saying thank you for being you, and for letting it make you smile." }
+});

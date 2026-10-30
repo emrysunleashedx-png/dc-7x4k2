@@ -1672,3 +1672,5 @@ button { font-family: inherit; }
 .world-more { align-self: center; padding: 10px 18px; border-radius: 999px; background: rgba(255,255,255,.85); color: #8a4f8f; font: 700 15px Fredoka, sans-serif; }
 
 .map-store { right: auto; left: 14px; }
+
+.memory-count { margin: 0 0 10px; text-align: center; font: 700 15px Fredoka, sans-serif; color: #8a4f8f; }
