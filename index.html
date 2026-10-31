@@ -174,6 +174,7 @@
       <h1 class="chapter-title" id="chapter-title">Chapter</h1>
       <p class="chapter-bonus" id="chapter-bonus"></p>
       <p class="chapter-next" id="chapter-next"></p>
+      <p class="chapter-tip" id="chapter-tip"></p>
       <button class="btn btn-success" id="btn-chapter-continue">Continue</button>
     </section>
 
@@ -225,9 +226,36 @@
         <button class="toggle-row" id="tg-sound"><span>🔊 Sound effects</span><b class="tg-state">On</b></button>
         <button class="toggle-row" id="tg-music"><span>🎵 Music</span><b class="tg-state">On</b></button>
         <button class="toggle-row" id="tg-vibrate"><span>📳 Vibration</span><b class="tg-state">On</b></button>
+        <button class="toggle-row" id="btn-backup"><span>💾 Backup &amp; restore</span><b class="tg-state">Open</b></button>
         <button class="toggle-row" id="btn-guide"><span>📖 Specials guide</span><b class="tg-state">Open</b></button>
         <button class="btn btn-map" id="btn-reset" style="width:100%;margin:14px 0 12px">Reset progress</button>
         <button class="btn btn-success" id="btn-settings-close" style="width:100%">Done</button>
+      </div>
+    </div>
+
+    <!-- Backup & restore -->
+    <div id="backup-modal" class="modal-overlay">
+      <div class="modal-content backup-card">
+        <h2>Backup &amp; restore 💾</h2>
+        <p class="backup-line" id="backup-current"></p>
+        <p class="backup-line" id="backup-last"></p>
+
+        <h3 class="backup-h">Moving to a new phone?</h3>
+        <p class="backup-help"><b>On the old phone:</b> make a backup and send it to yourself. <b>On the new phone:</b> open the game, come here and restore it.</p>
+        <div class="backup-row">
+          <button class="btn btn-success" id="btn-backup-copy">📋 Copy code</button>
+          <button class="btn btn-map" id="btn-backup-file">⬇️ Save file</button>
+        </div>
+        <textarea id="backup-code" class="backup-box" readonly rows="2" placeholder="Your code appears here"></textarea>
+
+        <h3 class="backup-h">Restore a backup</h3>
+        <textarea id="backup-input" class="backup-box" rows="3" placeholder="Paste your backup code here"></textarea>
+        <div class="backup-row">
+          <button class="btn btn-success" id="btn-backup-restore">Restore</button>
+          <label class="btn btn-map backup-filebtn">📁 Choose file<input type="file" id="backup-file-input" accept=".txt,text/plain" hidden></label>
+        </div>
+        <p class="backup-status" id="backup-status"></p>
+        <button class="btn btn-map" id="btn-backup-close" style="width:100%">Close</button>
       </div>
     </div>
 

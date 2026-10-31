@@ -1674,3 +1674,19 @@ button { font-family: inherit; }
 .map-store { right: auto; left: 14px; }
 
 .memory-count { margin: 0 0 10px; text-align: center; font: 700 15px Fredoka, sans-serif; color: #8a4f8f; }
+
+
+/* ================= backup & restore ================= */
+.backup-card { width: min(92vw, 420px); max-height: 90vh; overflow-y: auto; text-align: left; }
+.backup-card h2 { text-align: center; margin: 0 0 8px; }
+.backup-line { margin: 0 0 4px; font: 600 14px Fredoka, sans-serif; color: #7a4b8a; text-align: center; }
+.backup-h { margin: 14px 0 4px; font: 700 16px Fredoka, sans-serif; color: #c2358f; }
+.backup-help { margin: 0 0 10px; font: 500 13px/1.4 Fredoka, sans-serif; color: #633a62; }
+.backup-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.backup-row .btn { flex: 1; font-size: 15px; padding: 10px 8px; white-space: nowrap; text-align: center; margin: 0; }
+.backup-filebtn { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.backup-box { width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 8px; border: 2px solid #e6c4ef; border-radius: 12px; font: 12px/1.3 monospace; color: #444; background: #fff; resize: none; }
+.backup-status { min-height: 18px; margin: 4px 0 10px; font: 600 13px/1.35 Fredoka, sans-serif; color: #2e8b57; text-align: center; }
+.backup-status.bad { color: #c0392b; }
+.chapter-tip { margin: -14px 0 18px; padding: 0 24px; text-align: center; font: 600 13px/1.3 Fredoka, sans-serif; color: #fff; z-index: 1; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.backup-card h2 { font-size: 24px; }

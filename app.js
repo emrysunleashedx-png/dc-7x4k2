@@ -341,6 +341,131 @@ function updateDailyButton() {
   const btn = document.getElementById("btn-daily");
   if (btn) btn.style.display = dailyState().claimable ? "block" : "none";
 }
+// ---- BACKUP / RESTORE: move progress to a new phone with a code or a file ----
+function fnvHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(36);
+}
+function bytesToB64url(bytes) {
+  let s = "";
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlToBytes(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/");
+  while (str.length % 4) str += "=";
+  const bin = atob(str), out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function gzipText(text) {
+  const cs = new CompressionStream("gzip"), w = cs.writable.getWriter();
+  w.write(new TextEncoder().encode(text)); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function gunzipBytes(bytes) {
+  const ds = new DecompressionStream("gzip"), w = ds.writable.getWriter();
+  w.write(bytes); w.close();
+  return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+}
+async function makeBackupCode() {
+  const payload = JSON.stringify({ v: 1, t: Date.now(), progress: getWallet(), settings: settings });
+  const sum = fnvHash(payload);
+  if (typeof CompressionStream === "function") return "DC2:" + bytesToB64url(await gzipText(payload)) + "." + sum;
+  return "DC1:" + bytesToB64url(new TextEncoder().encode(payload)) + "." + sum;
+}
+function sanitizeProgress(p) {
+  if (!p || typeof p !== "object") throw new Error("bad progress");
+  const out = {};
+  const hu = Math.floor(Number(p.highestUnlocked));
+  if (!(hu >= 1)) throw new Error("bad level");
+  out.highestUnlocked = Math.min(hu, LEVELS.length);
+  ["coins", "gems", "hammers", "shuffles", "hints", "bombs", "blasts", "dailyStreak"].forEach(k => {
+    if (typeof p[k] === "number" && isFinite(p[k]) && p[k] >= 0) out[k] = Math.floor(p[k]);
+  });
+  ["dailyLast"].forEach(k => { if (typeof p[k] === "string") out[k] = p[k].slice(0, 20); });
+  ["birthdayClaimed", "birthdayLevelDone", "lastBackupAt"].forEach(k => { if (typeof p[k] === "number") out[k] = p[k]; });
+  if (Array.isArray(p.unlockedMoments)) out.unlockedMoments = p.unlockedMoments.filter(n => Number.isFinite(n));
+  if (Array.isArray(p.chaptersDone)) out.chaptersDone = p.chaptersDone.filter(n => Number.isFinite(n));
+  out.stars = {};
+  if (p.stars && typeof p.stars === "object") Object.keys(p.stars).forEach(k => {
+    const n = Number(p.stars[k]); if (n >= 1 && n <= 3) out.stars[k] = Math.floor(n);
+  });
+  return out;
+}
+async function parseBackupCode(raw) {
+  const code = String(raw || "").replace(/\s+/g, "");
+  const m = code.match(/^(DC[12]):([A-Za-z0-9_-]+)\.([a-z0-9]+)$/);
+  if (!m) throw new Error("format");
+  const bytes = b64urlToBytes(m[2]);
+  const text = m[1] === "DC2" ? await gunzipBytes(bytes) : new TextDecoder().decode(bytes);
+  if (fnvHash(text) !== m[3]) throw new Error("checksum");
+  const data = JSON.parse(text);
+  return { t: data.t, progress: sanitizeProgress(data.progress), settings: data.settings };
+}
+function backupSummary(p) {
+  return "Level " + p.highestUnlocked + "  ·  🪙 " + (p.coins || 0).toLocaleString() + "  ·  💎 " + (p.gems || 0);
+}
+function setBackupStatus(msg, bad) {
+  const el = document.getElementById("backup-status");
+  if (!el) return;
+  el.textContent = msg; el.className = "backup-status" + (bad ? " bad" : "");
+}
+function openBackup() {
+  const w = getWallet();
+  document.getElementById("backup-current").textContent = "On this phone: " + backupSummary(w);
+  document.getElementById("backup-last").textContent = w.lastBackupAt ? "Last backup: " + new Date(w.lastBackupAt).toLocaleDateString() : "You haven't made a backup yet.";
+  document.getElementById("backup-code").value = "";
+  document.getElementById("backup-input").value = "";
+  setBackupStatus("", false);
+  document.getElementById("settings-modal").classList.remove("show");
+  document.getElementById("backup-modal").classList.add("show");
+}
+async function copyBackupCode() {
+  try {
+    const code = await makeBackupCode();
+    const box = document.getElementById("backup-code");
+    box.value = code;
+    let copied = false;
+    try { await navigator.clipboard.writeText(code); copied = true; } catch (e) {}
+    if (!copied) { box.focus(); box.select(); try { copied = document.execCommand("copy"); } catch (e) {} }
+    patchSave({ lastBackupAt: Date.now() });
+    document.getElementById("backup-last").textContent = "Last backup: " + new Date().toLocaleDateString();
+    setBackupStatus(copied ? "✅ Copied! Send it to yourself (WhatsApp, Telegram, email), then paste it on the new phone." : "Select the code above and copy it, then send it to yourself.", false);
+  } catch (e) { setBackupStatus("Couldn't make the code on this phone. Try Download file instead.", true); }
+}
+async function downloadBackupFile() {
+  try {
+    const code = await makeBackupCode();
+    const blob = new Blob([code], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "desires-cascade-backup.txt";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    patchSave({ lastBackupAt: Date.now() });
+    setBackupStatus("✅ Saved desires-cascade-backup.txt to your Downloads. Move it to the new phone and use Choose file.", false);
+  } catch (e) { setBackupStatus("Couldn't save the file. Try Copy code instead.", true); }
+}
+async function restoreFromText(raw) {
+  let data;
+  try { data = await parseBackupCode(raw); }
+  catch (e) { setBackupStatus("That code doesn't look right. Make sure you copied all of it.", true); return; }
+  const cur = getWallet();
+  let msg = "Restore this backup?\n\nBackup: " + backupSummary(data.progress) + "\nThis phone: " + backupSummary(cur) + "\n\nThis replaces the progress on this phone.";
+  if (data.progress.highestUnlocked < cur.highestUnlocked) msg = "⚠️ This backup is OLDER than the progress on this phone.\n\n" + msg;
+  if (!confirm(msg)) { setBackupStatus("Nothing was changed.", false); return; }
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data.progress));
+    if (data.settings && typeof data.settings === "object") {
+      ["sound", "music", "vibrate"].forEach(k => { if (typeof data.settings[k] === "boolean") settings[k] = data.settings[k]; });
+      saveSettings();
+    }
+    setBackupStatus("✅ Restored! Reloading…", false);
+    setTimeout(() => location.reload(), 700);
+  } catch (e) { setBackupStatus("Couldn't save to this phone (storage is full or blocked).", true); }
+}
+
 // ---- BIRTHDAY LOGIC ----
 function birthdayPreview() { return /[?&]birthday=preview/.test(location.search); }
 function isBirthdayToday() {
@@ -1498,6 +1623,8 @@ function showChapterComplete(level) {
   document.getElementById("chapter-emoji").textContent = ch.emoji;
   document.getElementById("chapter-title").textContent = ch.title;
   document.getElementById("chapter-bonus").textContent = bonus;
+  const tip = document.getElementById("chapter-tip");
+  if (tip) tip.textContent = w.lastBackupAt ? "" : "💾 Tip: back up your progress in ⚙️ Settings so you never lose it.";
   document.getElementById("chapter-next").textContent = !next ? "You finished everything, " + PLAYER_NAME + " 💗"
     : (next.bonus && !ch.bonus) ? "The story is complete 💗  Bonus levels start now: " + next.title + " " + next.emoji
     : "Next: " + next.title + " " + next.emoji;
@@ -1742,6 +1869,19 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("guide-modal").classList.add("show");
   });
   document.getElementById("btn-guide-close").addEventListener("click", () => document.getElementById("guide-modal").classList.remove("show"));
+  document.getElementById("btn-backup").addEventListener("click", openBackup);
+  document.getElementById("btn-backup-close").addEventListener("click", () => document.getElementById("backup-modal").classList.remove("show"));
+  document.getElementById("btn-backup-copy").addEventListener("click", copyBackupCode);
+  document.getElementById("btn-backup-file").addEventListener("click", downloadBackupFile);
+  document.getElementById("btn-backup-restore").addEventListener("click", () => restoreFromText(document.getElementById("backup-input").value));
+  document.getElementById("backup-file-input").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { document.getElementById("backup-input").value = String(r.result || "").trim(); restoreFromText(r.result); e.target.value = ""; };
+    r.onerror = () => setBackupStatus("Couldn't read that file.", true);
+    r.readAsText(f);
+  });
   document.getElementById("btn-settings-close").addEventListener("click", () => document.getElementById("settings-modal").classList.remove("show"));
   document.getElementById("tg-sound").addEventListener("click", () => toggleSetting("sound"));
   document.getElementById("tg-music").addEventListener("click", () => toggleSetting("music"));
