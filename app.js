@@ -16,6 +16,18 @@ let goal = 0;
 
 const PLAYER_NAME = "Desire";
 
+// ---- WORDS SHOWN DURING PLAY (edit freely) ----------------------------------
+// Chain reactions: the number is how many matches in a row. 5 is used for 5 and higher.
+const CHAIN_WORDS = { 2: "Yes Desire", 3: "Musuuuuuu", 4: "Trenches Ewure", 5: "Prettyyyy" };
+// Special-gem combos and other messages
+const SPECIAL_WORDS = {
+  rainbowMega: "Mega combo!",     // rainbow swapped with a rocket or bomb
+  cross: "Cross blast!",          // two rockets swapped together
+  big: "Big blast!",              // bomb + rocket
+  bomb: "Mega bomb!",             // two bombs
+  reshuffle: "No moves — reshuffling!"
+};
+
 // ---- BIRTHDAY -----------------------------------------------------------
 // Shows a one-time surprise on this date (her phone's local date), every year.
 // Preview it any time by opening the site with  ?birthday=preview  (nothing is saved).
@@ -807,7 +819,7 @@ async function attemptSwapInner(a, b) {
     const list = [rainbowIdx];
     for (let i = 0; i < board.length; i++) if (color === 200 || gemType(board[i]) === color) list.push(i);
     const preset = { idx: rainbowIdx, color: color };
-    if (otherVal >= 100 && otherVal !== 200) { preset.mega = otherVal; showPopup("Mega combo!", 40); fxShake(3); fxFlash("rgba(255,230,255,.5)"); }
+    if (otherVal >= 100 && otherVal !== 200) { preset.mega = otherVal; showPopup(SPECIAL_WORDS.rainbowMega, 40); fxShake(3); fxFlash("rgba(255,230,255,.5)"); }
     fxRainbow();
     await resolveMatches([...new Set(list)], preset);
     return;
@@ -816,7 +828,7 @@ async function attemptSwapInner(a, b) {
   // Two specials swapped together: combo blast centred where they landed
   if (board[a] >= 100 && board[b] >= 100) {
     movesLeft--; windDue = true; updateHUD();
-    showPopup(["", "Cross blast!", "Big blast!", "Mega bomb!"][(board[a] >= 400 && board[b] >= 400) ? 3 : ((board[a] >= 400 || board[b] >= 400) ? 2 : 1)], 40);
+    showPopup([SPECIAL_WORDS.cross, SPECIAL_WORDS.cross, SPECIAL_WORDS.big, SPECIAL_WORDS.bomb][(board[a] >= 400 && board[b] >= 400) ? 3 : ((board[a] >= 400 || board[b] >= 400) ? 2 : 1)], 40);
     playSound('boom'); fxRing(b, 4.2); fxShake(3); fxFlash("rgba(255,240,200,.5)");
     const cells = comboCells(b, board[a], board[b]);
     await resolveMatches([...new Set([a, b, ...cells])]);
@@ -1066,7 +1078,12 @@ function showPopup(text, size) {
   const p = document.getElementById("combo-popup");
   if (!p) return;
   p.textContent = text;
-  p.style.fontSize = (size || 52) + "px";
+  const base = size || 52;
+  p.style.fontSize = base + "px";
+  // measure the real rendered width and shrink long phrases so they always fit the screen
+  const maxW = Math.min((window.innerWidth || 400) - 28, 420);
+  const w = p.offsetWidth;
+  if (w > maxW) p.style.fontSize = Math.max(14, Math.floor(base * maxW / w)) + "px";
   p.classList.remove("show"); void p.offsetWidth; p.classList.add("show");
 }
 
@@ -1171,7 +1188,7 @@ async function resolveMatchesInner(initialMatches, preset) {
     while (matches.length > 0) {
       chain++;
       playSound('pop', chain);
-      if (chain >= 2) showPopup(["", "", "Sweet!", "Great!", "Amazing!", "Wow!!"][Math.min(chain, 5)]);
+      if (chain >= 2) showPopup(CHAIN_WORDS[Math.min(chain, 5)]);
 
       let specialTriggered = false;
       matches.forEach(idx => {
@@ -1209,7 +1226,7 @@ async function resolveMatchesInner(initialMatches, preset) {
       }
     }
     if (goalsMet() || movesLeft <= 0 || findValidSwap()) break;
-    showPopup("No moves — reshuffling!", 28);
+    showPopup(SPECIAL_WORDS.reshuffle, 28);
     reshuffleUntilPlayable();
     renderBoard();
     await sleep(450);
