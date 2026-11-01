@@ -15,6 +15,7 @@ let cleared = 0;
 let goal = 0;
 
 const PLAYER_NAME = "Desire";
+const BUILD = "v8.1";   // shown in Settings so we can tell which version a phone is running
 
 // ---- WORDS SHOWN DURING PLAY (edit freely) ----------------------------------
 // Chain reactions: the number is how many matches in a row. 5 is used for 5 and higher.
@@ -48,6 +49,11 @@ const BIRTHDAY_LEVEL = {
   intro: "Break the heart 💖"
 };
 let birthdayShowing = false;
+
+// ---- CLOUD SAVE (needs the /api folder + a database on Vercel) ----
+const CLOUD_KEY = "desires_cascade_cloud";
+const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";   // no I, L, O or U so codes are easy to read out
+let cloudTimer = null, cloudDirty = false;
 let hammers = 3;
 let shuffles = 2;
 let hints = 2;
@@ -230,6 +236,7 @@ function loadProgress() {
 }
 function saveProgress(progress) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(progress)); } catch (e) {}
+  scheduleCloudPush();
 }
 function unlockLevel(id) {
   const p = loadProgress();
@@ -341,6 +348,164 @@ function updateDailyButton() {
   const btn = document.getElementById("btn-daily");
   if (btn) btn.style.display = dailyState().claimable ? "block" : "none";
 }
+// ---- CLOUD SAVE ----------------------------------------------------------
+function cloudState() { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || "{}") || {}; } catch (e) { return {}; } }
+function setCloudState(s) { try { localStorage.setItem(CLOUD_KEY, JSON.stringify(s)); } catch (e) {} }
+function newRecoveryCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  let s = "";
+  for (let i = 0; i < 12; i++) s += CODE_ALPHABET[bytes[i] % 32];
+  return s;
+}
+function normalizeCode(raw) {                      // accepts lower case, dashes, spaces; fixes look-alike letters
+  const c = String(raw || "").toUpperCase().replace(/[^0-9A-Z]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1");
+  return /^[0-9A-HJKMNP-TV-Z]{12}$/.test(c) ? c : "";
+}
+function prettyCode(c) { return c ? c.slice(0, 4) + "-" + c.slice(4, 8) + "-" + c.slice(8, 12) : ""; }
+async function cloudCall(path, body) {
+  try {
+    const res = await fetch("/api/" + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true });
+    let data = null; try { data = await res.json(); } catch (e) {}
+    return { status: res.status, data: data };
+  } catch (e) { return { status: 0, data: null }; }          // offline
+}
+async function cloudAvailable() {
+  try {
+    const res = await fetch("/api/ping", { cache: "no-store" });
+    const j = await res.json();
+    return j && j.ok ? { ok: !!j.configured, why: j.configured ? "" : "not_configured" } : { ok: false, why: "no_api" };
+  } catch (e) { return { ok: false, why: navigator.onLine === false ? "offline" : "no_api" }; }
+}
+function cloudPayload() { return { v: 1, t: Date.now(), progress: getWallet(), settings: settings }; }
+async function cloudPush(force) {
+  const st = cloudState();
+  if (!st.code) return { skipped: true };
+  const r = await cloudCall("save", { code: st.code, data: cloudPayload(), force: !!force });
+  if (r.status === 200) { st.last = Date.now(); delete st.conflict; delete st.cloudLevel; setCloudState(st); return { ok: true }; }
+  if (r.status === 409 && r.data && r.data.error === "older") { st.conflict = true; st.cloudLevel = r.data.cloud && r.data.cloud.level; setCloudState(st); return { conflict: true }; }
+  return { error: r.status };
+}
+function scheduleCloudPush() {
+  const st = cloudState();
+  if (!st.code || st.conflict) return;
+  cloudDirty = true;
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(() => {
+    cloudDirty = false;
+    cloudPush(false).then(r => { if (r && r.error) cloudDirty = true; }).catch(() => { cloudDirty = true; });
+  }, 3000);
+}
+document.addEventListener("visibilitychange", () => {         // leaving the app: sync right now
+  if (document.hidden && cloudDirty) {
+    clearTimeout(cloudTimer); cloudDirty = false;
+    cloudPush(false).then(r => { if (r && r.error) cloudDirty = true; }).catch(() => { cloudDirty = true; });
+  }
+});
+function setCloudMsg(msg, bad) {
+  const el = document.getElementById("cloud-msg");
+  if (el) { el.textContent = msg; el.className = "backup-status" + (bad ? " bad" : ""); }
+}
+function updateCloudRow() {
+  const el = document.getElementById("cloud-row-state");
+  if (!el) return;
+  const st = cloudState();
+  el.textContent = st.code ? "On ✓" : "Off";
+}
+function cloudStatusLine() {
+  const st = cloudState();
+  if (!st.code) return "Cloud save is off on this phone.";
+  if (st.conflict) return "⚠️ The cloud has more progress (level " + (st.cloudLevel || "?") + ") than this phone.";
+  return st.last ? "☁️ Cloud save is ON · last synced " + new Date(st.last).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "☁️ Cloud save is ON.";
+}
+async function openCloud() {
+  document.getElementById("settings-modal").classList.remove("show");
+  document.getElementById("cloud-modal").classList.add("show");
+  document.getElementById("cloud-input").value = "";
+  setCloudMsg("", false);
+  document.getElementById("cloud-status").textContent = "Checking…";
+  ["cloud-off-box", "cloud-on-box", "cloud-restore-box", "cloud-na-box"].forEach(id => document.getElementById(id).style.display = "none");
+  const av = await cloudAvailable();
+  if (!av.ok) {
+    const why = av.why === "offline" ? "You're offline right now. Connect to the internet and try again."
+      : av.why === "not_configured" ? "Cloud save isn't switched on yet. The server part still needs to be set up. Your normal progress is not affected."
+      : "Cloud save isn't available here. It only works on the published site, not in a local copy.";
+    document.getElementById("cloud-status").textContent = "☁️ Not available";
+    document.getElementById("cloud-na-text").textContent = why;
+    document.getElementById("cloud-na-box").style.display = "block";
+    return;
+  }
+  renderCloud();
+}
+function renderCloud() {
+  const st = cloudState();
+  document.getElementById("cloud-status").textContent = cloudStatusLine();
+  document.getElementById("cloud-off-box").style.display = st.code ? "none" : "block";
+  document.getElementById("cloud-on-box").style.display = st.code ? "block" : "none";
+  document.getElementById("cloud-restore-box").style.display = "block";
+  document.getElementById("cloud-code").textContent = prettyCode(st.code);
+  document.getElementById("cloud-conflict-box").style.display = st.conflict ? "block" : "none";
+  updateCloudRow();
+}
+async function cloudTurnOn() {
+  setCloudMsg("Setting up…", false);
+  for (let tries = 0; tries < 3; tries++) {
+    const code = newRecoveryCode();
+    const r = await cloudCall("save", { code: code, data: cloudPayload(), create: true });
+    if (r.status === 200) {
+      setCloudState({ code: code, last: Date.now() });
+      setCloudMsg("✅ Cloud save is on. Write the code down or take a screenshot. You'll need it on a new phone.", false);
+      renderCloud(); return;
+    }
+    if (r.status === 409) continue;                       // code already taken (astronomically unlikely): try another
+    setCloudMsg(r.status === 0 ? "No internet right now. Try again when you're online." : r.status === 503 ? "Cloud save isn't set up on the server yet." : r.status === 429 ? "Too many tries. Wait a minute and try again." : "Something went wrong. Try again in a moment.", true);
+    return;
+  }
+  setCloudMsg("Something went wrong. Try again in a moment.", true);
+}
+async function cloudSyncNow(force) {
+  setCloudMsg("Syncing…", false);
+  const r = await cloudPush(force);
+  if (r.ok) setCloudMsg("✅ Synced.", false);
+  else if (r.conflict) setCloudMsg("The cloud has more progress than this phone, so nothing was overwritten. Choose an option below.", true);
+  else setCloudMsg("Couldn't sync right now (no internet?). It will retry automatically.", true);
+  renderCloud();
+}
+async function cloudCopyCode() {
+  const st = cloudState(); if (!st.code) return;
+  const text = prettyCode(st.code);
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {}
+  setCloudMsg(ok ? "✅ Copied: " + text : "Your code is " + text + " (copy it by hand).", false);
+}
+function cloudTurnOff() {
+  if (!confirm("Turn off cloud save on this phone?\n\nYour progress stays safe in the cloud, and you can restore it any time with your code.")) return;
+  const st = cloudState(); delete st.code; delete st.conflict; delete st.cloudLevel; delete st.last;
+  setCloudState(st); renderCloud(); setCloudMsg("Cloud save turned off on this phone.", false);
+}
+async function cloudRestore() {
+  const code = normalizeCode(document.getElementById("cloud-input").value);
+  if (!code) { setCloudMsg("That code doesn't look right. It has 12 letters and numbers, like ABCD-1234-EFGH.", true); return; }
+  setCloudMsg("Looking for your save…", false);
+  const r = await cloudCall("load", { code: code });
+  if (r.status === 404) { setCloudMsg("No save was found for that code. Check it and try again.", true); return; }
+  if (r.status === 429) { setCloudMsg("Too many tries. Wait a minute and try again.", true); return; }
+  if (r.status !== 200 || !r.data || !r.data.data) { setCloudMsg(r.status === 0 ? "No internet right now." : "Couldn't reach the cloud. Try again in a moment.", true); return; }
+  let progress;
+  try { progress = sanitizeProgress(r.data.data.progress); } catch (e) { setCloudMsg("That save looks damaged, so nothing was changed.", true); return; }
+  const cur = getWallet();
+  let msg = "Restore your cloud save?\n\nCloud: " + backupSummary(progress) + "\nThis phone: " + backupSummary(cur) + "\n\nThis replaces the progress on this phone.";
+  if (progress.highestUnlocked < cur.highestUnlocked) msg = "⚠️ The cloud save is OLDER than the progress on this phone.\n\n" + msg;
+  if (!confirm(msg)) { setCloudMsg("Nothing was changed.", false); return; }
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(progress));
+    const s = r.data.data.settings;
+    if (s && typeof s === "object") { ["sound", "music", "vibrate"].forEach(k => { if (typeof s[k] === "boolean") settings[k] = s[k]; }); saveSettings(); }
+    setCloudState({ code: code, last: Date.now() });        // this phone now keeps syncing to the same save
+    setCloudMsg("✅ Restored! Reloading…", false);
+    setTimeout(() => location.reload(), 700);
+  } catch (e) { setCloudMsg("Couldn't save to this phone (storage is full or blocked).", true); }
+}
+
 // ---- BACKUP / RESTORE: move progress to a new phone with a code or a file ----
 function fnvHash(str) {
   let h = 0x811c9dc5;
@@ -575,6 +740,9 @@ function claimDaily() {
 
 // ---- SETTINGS UI ----------------------------------------------------
 function syncSettingsUI() {
+  updateCloudRow();
+  const ver = document.getElementById("settings-version");
+  if (ver) ver.textContent = "Build " + BUILD + " · " + LEVELS.length + " levels";
   [["tg-sound", "sound"], ["tg-music", "music"], ["tg-vibrate", "vibrate"]].forEach(([id, key]) => {
     const el = document.getElementById(id); if (!el) return;
     el.classList.toggle("off", !settings[key]);
@@ -1869,6 +2037,25 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("guide-modal").classList.add("show");
   });
   document.getElementById("btn-guide-close").addEventListener("click", () => document.getElementById("guide-modal").classList.remove("show"));
+  document.getElementById("btn-refresh").addEventListener("click", async () => {
+    // Clears the downloaded game files (NOT her progress, which lives in localStorage) and loads the latest version.
+    if (!confirm("Refresh the game files?\n\nYour progress is kept. The game will reload with the latest version.")) return;
+    try {
+      if (navigator.serviceWorker) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); }
+      if (window.caches) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); }
+    } catch (e) {}
+    location.reload();
+  });
+  document.getElementById("btn-cloud").addEventListener("click", openCloud);
+  document.getElementById("btn-cloud-close").addEventListener("click", () => document.getElementById("cloud-modal").classList.remove("show"));
+  document.getElementById("btn-cloud-on").addEventListener("click", cloudTurnOn);
+  document.getElementById("btn-cloud-copy").addEventListener("click", cloudCopyCode);
+  document.getElementById("btn-cloud-sync").addEventListener("click", () => cloudSyncNow(false));
+  document.getElementById("btn-cloud-force").addEventListener("click", () => { if (confirm("Replace the cloud save with this phone's progress?")) cloudSyncNow(true); });
+  document.getElementById("btn-cloud-off").addEventListener("click", cloudTurnOff);
+  document.getElementById("btn-cloud-restore").addEventListener("click", cloudRestore);
+  if (cloudState().code) scheduleCloudPush();
+  updateCloudRow();
   document.getElementById("btn-backup").addEventListener("click", openBackup);
   document.getElementById("btn-backup-close").addEventListener("click", () => document.getElementById("backup-modal").classList.remove("show"));
   document.getElementById("btn-backup-copy").addEventListener("click", copyBackupCode);

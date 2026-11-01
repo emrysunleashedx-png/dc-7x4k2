@@ -226,10 +226,51 @@
         <button class="toggle-row" id="tg-sound"><span>🔊 Sound effects</span><b class="tg-state">On</b></button>
         <button class="toggle-row" id="tg-music"><span>🎵 Music</span><b class="tg-state">On</b></button>
         <button class="toggle-row" id="tg-vibrate"><span>📳 Vibration</span><b class="tg-state">On</b></button>
+        <button class="toggle-row" id="btn-cloud"><span>☁️ Cloud save</span><b class="tg-state" id="cloud-row-state">Off</b></button>
         <button class="toggle-row" id="btn-backup"><span>💾 Backup &amp; restore</span><b class="tg-state">Open</b></button>
         <button class="toggle-row" id="btn-guide"><span>📖 Specials guide</span><b class="tg-state">Open</b></button>
+        <button class="toggle-row" id="btn-refresh"><span>🔄 Refresh game files</span><b class="tg-state">Keeps progress</b></button>
         <button class="btn btn-map" id="btn-reset" style="width:100%;margin:14px 0 12px">Reset progress</button>
+        <p class="settings-version" id="settings-version"></p>
         <button class="btn btn-success" id="btn-settings-close" style="width:100%">Done</button>
+      </div>
+    </div>
+
+    <!-- Cloud save -->
+    <div id="cloud-modal" class="modal-overlay">
+      <div class="modal-content backup-card">
+        <h2>Cloud save ☁️</h2>
+        <p class="backup-line" id="cloud-status">Checking…</p>
+
+        <div id="cloud-na-box" style="display:none"><p class="backup-help" id="cloud-na-text"></p></div>
+
+        <div id="cloud-off-box" style="display:none">
+          <p class="backup-help">Keep your progress safe in the cloud. If you change or lose your phone, a short recovery code brings everything back.</p>
+          <button class="btn btn-success" id="btn-cloud-on" style="width:100%;margin-bottom:8px">Turn on cloud save</button>
+        </div>
+
+        <div id="cloud-on-box" style="display:none">
+          <p class="backup-help">Your recovery code. <b>Write it down or screenshot it.</b> You need it to restore on a new phone.</p>
+          <div class="cloud-code" id="cloud-code"></div>
+          <div class="backup-row">
+            <button class="btn btn-success" id="btn-cloud-copy">📋 Copy code</button>
+            <button class="btn btn-map" id="btn-cloud-sync">🔄 Sync now</button>
+          </div>
+          <div id="cloud-conflict-box" style="display:none">
+            <p class="backup-help">This phone has less progress than the cloud, so nothing was overwritten. You can restore from the cloud below, or:</p>
+            <button class="btn btn-map" id="btn-cloud-force" style="width:100%;margin-bottom:8px">Replace the cloud with this phone</button>
+          </div>
+          <button class="btn btn-map" id="btn-cloud-off" style="width:100%;margin-bottom:6px">Turn off on this phone</button>
+        </div>
+
+        <div id="cloud-restore-box" style="display:none">
+          <h3 class="backup-h">New phone? Restore your save</h3>
+          <input id="cloud-input" class="backup-box cloud-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-1234-EFGH">
+          <button class="btn btn-success" id="btn-cloud-restore" style="width:100%;margin-bottom:6px">Restore from cloud</button>
+        </div>
+
+        <p class="backup-status" id="cloud-msg"></p>
+        <button class="btn btn-map" id="btn-cloud-close" style="width:100%">Close</button>
       </div>
     </div>
 

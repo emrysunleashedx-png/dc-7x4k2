@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cascade-v6';
+const CACHE_NAME = 'cascade-v9';
 const ASSETS = [
   './', './index.html', './style.css', './app.js', './levels.js', './messages.js', './messages_bonus.js', './messages_bonus2.js',
   './icon.svg', './manifest.json',
@@ -24,6 +24,7 @@ self.addEventListener('activate', (e) => {
 // Network-first: edits show up right away while online, cache is the offline fallback.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).pathname.startsWith('/api/')) return;   // cloud-save calls always go straight to the network
   e.respondWith(
     fetch(e.request)
       .then((res) => {
