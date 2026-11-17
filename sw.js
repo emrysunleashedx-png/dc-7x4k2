@@ -1,6 +1,6 @@
-const CACHE_NAME = 'cascade-v9';
+const CACHE_NAME = 'cascade-v10';
 const ASSETS = [
-  './', './index.html', './style.css', './app.js', './levels.js', './messages.js', './messages_bonus.js', './messages_bonus2.js',
+  './', './index.html', './style.css', './app.js', './levels.js', './messages.js', './messages_bonus.js', './messages_bonus2.js', './messages_bonus3.js',
   './icon.svg', './manifest.json',
   './assets/desire.jpg', './assets/bg.jpg',
   './assets/gem_0.png', './assets/gem_1.png', './assets/gem_2.png', './assets/gem_3.png', './assets/gem_4.png'

@@ -15,7 +15,7 @@ let cleared = 0;
 let goal = 0;
 
 const PLAYER_NAME = "Desire";
-const BUILD = "v8.1";   // shown in Settings so we can tell which version a phone is running
+const BUILD = "v8.2";   // shown in Settings so we can tell which version a phone is running
 
 // ---- WORDS SHOWN DURING PLAY (edit freely) ----------------------------------
 // Chain reactions: the number is how many matches in a row. 5 is used for 5 and higher.

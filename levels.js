@@ -1,4 +1,4 @@
-// Desire's Cascade — 150 story levels (15 chapters) + 850 bonus levels (85 chapters) = 1000.
+// Desire's Cascade — 150 story levels (15 chapters) + 850 bonus levels (85 chapters) + 200 more bonus levels (20 chapters) = 1200.
 const CHAPTERS = [
   { id: 1, title: "Kiddo's Garden", emoji: "🌱" },
   { id: 2, title: "Musu's Orchard", emoji: "🍎" },
@@ -328,6 +328,52 @@ const BONUS_CHAPTERS_3 = [
   });
 })();
 
+// ---- BONUS CHAPTERS, PART 4 (levels 1001-1200) --------------------------
+// Same format as parts 2 and 3: name, emoji, 6 themed words. Placeholders - rename freely.
+// Difficulty stays at the level-1000 plateau (see the move-reduction cap below).
+const BONUS_CHAPTERS_4 = [
+  ["Encore Evening", "🎭", ["Curtain Call", "Stage Light", "Standing Ovation", "Velvet Seat", "Last Bow", "Bouquet"]],
+  ["Lantern Festival", "🏮", ["Paper Lantern", "River Glow", "Wish String", "Night Market", "Red Thread", "Floating Light"]],
+  ["Paper Boat River", "⛵", ["Paper Boat", "Fold", "Current", "Stepping Stone", "Little Sail", "Riverbank"]],
+  ["Violet Valley", "🪻", ["Lavender", "Bee Hum", "Violet Path", "Purple Dusk", "Stone Wall", "Soft Breeze"]],
+  ["Pearl Market", "🦪", ["Pearl String", "Fish Stall", "Salt Basket", "Harbour Bell", "Silk Awning", "Lucky Shell"]],
+  ["Thunder Plains", "⛈️", ["Thunderhead", "Puddle", "Lightning Rod", "Rain Curtain", "Wet Grass", "Rumble"]],
+  ["Snowy Observatory", "🔭", ["Telescope", "Star Chart", "Frosted Dome", "Comet Tail", "Night Shift", "Cold Lens"]],
+  ["Spice Bazaar", "🌶️", ["Saffron", "Cinnamon Stick", "Brass Scale", "Colourful Sack", "Cardamom", "Warm Smoke"]],
+  ["Jade Gardens", "🎋", ["Bamboo", "Jade Bridge", "Koi Pond", "Moon Gate", "Stone Lantern", "Quiet Pavilion"]],
+  ["Marble Halls", "🏛️", ["Marble Step", "Tall Column", "Echo Hall", "Mosaic Floor", "Grand Door", "Gilded Frame"]],
+  ["Sapphire Sea", "🌊", ["Deep Blue", "Sea Glass", "Gull Cry", "Sandbar", "Blue Horizon", "Salt Spray"]],
+  ["Fairy Light Forest", "🧚", ["Glow Moth", "Tiny Door", "Dew Lantern", "Mossy Stump", "Firefly", "Hidden Path"]],
+  ["Midnight Train", "🚂", ["Steam Whistle", "Window Seat", "Night Carriage", "Ticket Stub", "Distant Station", "Rail Song"]],
+  ["Sugar Mountain", "🍬", ["Caramel Slope", "Toffee Trail", "Sugar Snow", "Lollipop Tree", "Gumdrop", "Marshmallow"]],
+  ["Lighthouse Lullaby", "💡", ["Lamp Room", "Spiral Steps", "Beam Sweep", "Foghorn", "Keeper's Tea", "Calm Water"]],
+  ["Harvest Moon Farm", "🌕", ["Hay Bale", "Barn Door", "Moon Pumpkin", "Scarecrow Hat", "Apple Cart", "Cricket Song"]],
+  ["Wishing Well", "🪙", ["Copper Coin", "Echo Drop", "Mossy Brick", "Old Rope", "Whispered Wish", "Bucket Song"]],
+  ["Blanket Fort Kingdom", "🏕️", ["Pillow Wall", "Flashlight", "Secret Password", "Cushion Throne", "Story Hour", "Sleepy Guard"]],
+  ["Glow Reef", "🪸", ["Neon Coral", "Drifting Jelly", "Bubble Stream", "Sunken Ship", "Tide Light", "Quiet Depth"]],
+  ["Beyond the Horizon", "🌅", ["Open Road", "New Morning", "Far Shore", "Golden Edge", "Next Page", "Wide Sky"]]
+];
+(function addBonusPart4() {
+  function rngSeeded(seed) { let s = seed * 9301 + 49297; return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+  BONUS_CHAPTERS_4.forEach(function (def, ci) {
+    const chapterId = 101 + ci;
+    CHAPTERS.push({ id: chapterId, title: def[0], emoji: def[1], bonus: true });
+    const pairs = [];
+    BONUS_ADJECTIVES.forEach(function (a) { def[2].forEach(function (w) { pairs.push(a + " " + w); }); });
+    const r = rngSeeded(chapterId * 17);
+    for (let i = pairs.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = pairs[i]; pairs[i] = pairs[j]; pairs[j] = t; }
+    let p = 0;
+    for (let i = 0; i < 10; i++) {
+      let name = def[0] + " Finale";
+      if (i < 9) {                                   // pick the next name nobody else already uses
+        while (p < pairs.length && LEVELS.some(function (l) { return l.name === pairs[p]; })) p++;
+        name = pairs[p++];
+      }
+      LEVELS.push({ id: 1001 + ci * 10 + i, chapter: chapterId, name: name, goal: 120, moves: 14 });
+    }
+  });
+})();
+
 // ---- GOAL TYPES & BALANCE ---------------------------------------------
 // Levels 1-10: plain "clear gems". After that the goal type rotates:
 //   collect specific gems, break ice, or both. Tweak the numbers below freely.
@@ -418,7 +464,7 @@ const GOAL_TUNING = {
         if (k === 1 && id > 700) { l.chains = extraCells(3); l.moves += 3; }                               // wind + chains
         if (k === 3 && id > 700 && !l.wind) { l.wind = windRows(1); l.moves += 3; }                        // collect + wind
         if (k === 0 && id > 800) { l.chains = (l.chains || []).concat(extraCells(3)); l.wind = windRows(2); l.moves += 5; }   // finales: everything
-        l.moves = Math.max(14, l.moves - Math.floor((id - 500) / 100) * 2);   // fewer moves as you go: -2 per 100 levels
+        l.moves = Math.max(14, l.moves - Math.min(Math.floor((id - 500) / 100), 5) * 2);   // fewer moves as you go: -2 per 100 levels (capped at the level-1000 plateau)
       }
       return;
     }
