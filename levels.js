@@ -1,4 +1,4 @@
-// Desire's Cascade — 150 story levels (15 chapters) + 850 bonus levels (85 chapters) + 200 more bonus levels (20 chapters) = 1200.
+// Desire's Cascade — 150 story levels (15 chapters) + 850 bonus levels (85 chapters) + 200 more (20 chapters) + 800 more (80 chapters) = 2000.
 const CHAPTERS = [
   { id: 1, title: "Kiddo's Garden", emoji: "🌱" },
   { id: 2, title: "Musu's Orchard", emoji: "🍎" },
@@ -370,6 +370,115 @@ const BONUS_CHAPTERS_4 = [
         name = pairs[p++];
       }
       LEVELS.push({ id: 1001 + ci * 10 + i, chapter: chapterId, name: name, goal: 120, moves: 14 });
+    }
+  });
+})();
+
+// ---- BONUS CHAPTERS, PART 5 (levels 1201-2000) --------------------------
+// 80 more chapters (121-200), same format as parts 2-4: name, emoji, 6 themed words.
+// Placeholders - rename freely. Difficulty stays at the level-1000 plateau.
+const BONUS_CHAPTERS_5 = [
+  ["Second Wind Shore", "🏖️", ["Sand Dollar", "Beach Towel", "Driftwood", "Tide Line", "Sea Breeze", "Sun Hat"]],
+  ["Cinnamon Streets", "🥮", ["Cinnamon Swirl", "Cobblestone", "Shop Bell", "Warm Bun", "Street Lamp", "Window Display"]],
+  ["Starfall Plateau", "🌠", ["Falling Star", "Wish Stone", "Night Wind", "High Camp", "Silver Dust", "Open Sky"]],
+  ["Teacup Town", "🫖", ["Teacup", "Sugar Cube", "Biscuit Tin", "Doily", "Kettle Whistle", "Tiny Spoon"]],
+  ["Emerald Canopy", "🌴", ["Canopy", "Hanging Vine", "Parrot Call", "Rope Bridge", "Wet Leaf", "Jungle Mist"]],
+  ["Glass Orchard", "🍏", ["Glass Apple", "Crystal Branch", "Clear Blossom", "Frosted Bough", "Shine", "Sparkling Root"]],
+  ["Snowfall Station", "🚉", ["Platform", "Frosted Bench", "Steam Plume", "Timetable", "Scarf", "Last Carriage"]],
+  ["Amber Lanes", "🟠", ["Amber Glow", "Autumn Gate", "Crisp Leaf", "Chimney Smoke", "Old Bicycle", "Evening Hush"]],
+  ["Kite Hill Summer", "🪁", ["Kite String", "Picnic Rug", "Long Grass", "Lemonade", "Cloud Chase", "Warm Gust"]],
+  ["Moonlit Ferry", "⛴️", ["Ferry Rope", "Lantern Pole", "Black Water", "Silver Wake", "Night Deck", "Far Pier"]],
+  ["Painted Canyon", "🎨", ["Red Stripe", "Ochre Wall", "Echo Ledge", "Dry River", "Canyon Wren", "Sun Slab"]],
+  ["Puddle Park", "☔", ["Puddle", "Rain Boot", "Umbrella", "Drizzle", "Duck Pond", "Grey Bench"]],
+  ["Clocktower Square", "🕰️", ["Brass Hand", "Chime", "Pigeon", "Plaza Stone", "Hourglass", "Tower Shadow"]],
+  ["Berry Brook", "🫐", ["Blueberry", "Bramble Jam", "Mossy Bank", "Little Bridge", "Brook Song", "Picking Basket"]],
+  ["Skylight Attic", "🏚️", ["Dusty Trunk", "Old Quilt", "Skylight", "Music Box", "Cobweb", "Wooden Beam"]],
+  ["Saffron Dunes", "🐪", ["Saffron Sky", "Caravan", "Wind Ripple", "Brass Bell", "Night Camp", "Dune Crest"]],
+  ["Willow Weir", "🌿", ["Weir", "Willow Whip", "Stone Lock", "Heron Step", "Slow Water", "Green Bank"]],
+  ["Candlelit Cellar", "🕯️", ["Candle Flame", "Wine Rack", "Stone Arch", "Wax Drip", "Cool Air", "Wooden Door"]],
+  ["Mapmaker's Hill", "🗺️", ["Compass Rose", "Ink Line", "Folded Map", "Brass Pin", "Trail Mark", "Distant Peak"]],
+  ["Harbour of Gulls", "🪝", ["Gull Wing", "Net Reel", "Salt Rope", "Crab Pot", "Bait Bucket", "Pier Post"]],
+  ["Peppermint Peaks", "🍥", ["Peppermint", "Stripe", "Frost Bite", "Candy Spire", "Sleigh Track", "Cocoa Steam"]],
+  ["Lantern Library", "🏮", ["Reading Lamp", "Rolling Ladder", "Quiet Aisle", "Bound Atlas", "Page Corner", "Dusty Spine"]],
+  ["Copper Springs", "♨️", ["Hot Spring", "Copper Pipe", "Steam Veil", "Warm Stone", "Mineral Pool", "Bath House"]],
+  ["Daydream Meadow", "🌼", ["Daisy Chain", "Buzzing Bee", "Cloud Shape", "Tall Grass", "Lazy Hour", "Clover Bed"]],
+  ["Stormglass Bay", "🫧", ["Glass Bottle", "Barometer", "Grey Swell", "Salt Window", "Harbour Light", "Distant Thunder"]],
+  ["Velvet Theatre", "🎪", ["Red Curtain", "Prompt Box", "Spotlight", "Backstage", "Opera Glass", "Quiet Wings"]],
+  ["Orchard of Lanterns", "🏮", ["Hanging Light", "Soft Glow", "Warm Bough", "Night Fruit", "Paper Wick", "Evening Path"]],
+  ["Mosaic Market", "🧩", ["Tile Piece", "Blue Square", "Gold Fleck", "Stall Awning", "Fountain", "Bright Pattern"]],
+  ["Pinecone Pass", "🌲", ["Pinecone", "Needle Floor", "Mountain Gate", "Cold Stream", "Tall Pine", "Log Cabin"]],
+  ["Beeswax Heights", "🐝", ["Wax Cell", "Golden Drip", "Hive Hum", "Wild Flower", "Drone", "Amber Wall"]],
+  ["Rainbow Laundry", "🧺", ["Washing Line", "Peg", "Sheet Sail", "Soap Bubble", "Colourful Sock", "Warm Breeze"]],
+  ["Ember Observatory", "🔥", ["Hot Lens", "Ember Chart", "Night Brazier", "Spark Orbit", "Ashen Dome", "Cinder Star"]],
+  ["Reed Flute Marsh", "🎶", ["Reed Flute", "Frog Chorus", "Mud Bank", "Dragonfly", "Marsh Light", "Slow Mist"]],
+  ["Porcelain Palace", "🏯", ["Blue Vase", "Painted Tile", "Silk Screen", "Jade Step", "Tea Hall", "Lacquer Door"]],
+  ["Cloudberry Cliffs", "☁️", ["Cloudberry", "Cliff Path", "Sea Fog", "Tern Call", "Wind Shelf", "Wet Rock"]],
+  ["Fiddle Folk Fair", "🎻", ["Fiddle", "Bunting", "Hay Cart", "Dancing Boots", "Cider Cup", "Village Green"]],
+  ["Pillow Cloud City", "🛏️", ["Down Feather", "Soft Tower", "Cloud Stair", "Sleepy Lamp", "Cosy Bridge", "Drift Gate"]],
+  ["Lavender Lighthouse", "🗼", ["Violet Beam", "Stone Stair", "Herb Garden", "Sea Fog", "Keeper's Cat", "Watch Room"]],
+  ["Glitter Gorge", "✨", ["Glitter", "Mica Wall", "Sparkle Stream", "Sun Shaft", "Deep Echo", "Quartz"]],
+  ["Bookbinder's Row", "📕", ["Thread", "Leather Spine", "Press", "Paste Pot", "Gold Leaf", "Paper Stack"]],
+  ["Gingerbread Hamlet", "🍪", ["Gumdrop Roof", "Icing Line", "Spice Smell", "Sugar Fence", "Candy Window", "Cookie Path"]],
+  ["Tidepool Terrace", "🦀", ["Hermit Crab", "Starfish", "Wet Step", "Barnacle", "Salt Pool", "Low Tide"]],
+  ["Firefly Fields", "🪲", ["Firefly", "Dusk Haze", "Cool Dew", "Fence Post", "Jar Light", "Night Song"]],
+  ["Silver Rail Valley", "🚃", ["Silver Rail", "Signal Lamp", "Whistle Stop", "Gravel", "Tunnel Mouth", "Station Clock"]],
+  ["Amethyst Caves", "🔮", ["Amethyst", "Purple Vein", "Drip Echo", "Cave Pearl", "Lantern Hook", "Cool Hush"]],
+  ["Wintergreen Wharf", "🌿", ["Mint Frost", "Wharf Plank", "Rope Coil", "Crate Stack", "Foggy Lamp", "Cold Gull"]],
+  ["Sunbeam Studio", "🖌️", ["Easel", "Paint Smear", "Window Light", "Canvas", "Brush Jar", "Drying Rack"]],
+  ["Drumbeat Delta", "🥁", ["Drum Skin", "Palm Rhythm", "River Mouth", "Reed Boat", "Heat Haze", "Dance Circle"]],
+  ["Quilted Hills", "🧵", ["Patchwork", "Stitch Line", "Green Square", "Thread Fence", "Sheep Dot", "Warm Seam"]],
+  ["Whale Song Sea", "🐋", ["Whale Song", "Deep Swell", "Spout", "Fin Wake", "Blue Hush", "Distant Call"]],
+  ["Almond Orchard", "🌸", ["Almond Blossom", "Petal Drift", "Bee Row", "Pale Pink", "Spring Wind", "Old Ladder"]],
+  ["Chimney Sweep Roofs", "🏠", ["Chimney Pot", "Slate Tile", "Weather Vane", "Rooftop Cat", "Soot Smudge", "Evening Smoke"]],
+  ["Glowworm Grotto", "🪱", ["Glowworm", "Blue Ceiling", "Quiet Boat", "Wet Stone", "Soft Light", "Hidden Pool"]],
+  ["Marigold Mile", "🏵️", ["Marigold", "Garland", "Festival Road", "Bright Petal", "Drum Echo", "Warm Dust"]],
+  ["Frostfire Bridge", "❄️", ["Frost Rail", "Blue Flame", "Icy Plank", "Cold Spark", "Bridge Lamp", "Mist Gap"]],
+  ["Pocket Watch Woods", "⌚", ["Pocket Watch", "Tick Branch", "Brass Key", "Mossy Gear", "Slow Hour", "Chain Link"]],
+  ["Coral Lighthouse", "🐚", ["Coral Lamp", "Shell Wall", "Reef Beam", "Pearl Door", "Tide Stair", "Sea Glow"]],
+  ["Apricot Terrace", "🍑", ["Apricot", "Terrace Wall", "Sun Basket", "Stone Pot", "Warm Tile", "Evening Gold"]],
+  ["Skybridge Gardens", "🌉", ["Hanging Pot", "High Path", "Wind Chime", "Rail Flower", "Open Air", "Rope Net"]],
+  ["Thistle Moor", "🌾", ["Thistle", "Heather", "Grey Mist", "Stone Cairn", "Moor Wind", "Lone Hawk"]],
+  ["Brass Band Boulevard", "🎺", ["Trumpet", "Tuba", "Parade Drum", "Brass Button", "Marching Step", "Crowd Clap"]],
+  ["Dewdrop Gardens", "💧", ["Dewdrop", "Cobweb Jewel", "Leaf Tip", "Morning Chill", "Garden Gate", "Wet Petal"]],
+  ["Sapphire Skies", "💙", ["Sapphire", "Blue Hour", "High Cloud", "Cold Star", "Clear Air", "Deep Sky"]],
+  ["Cocoa Cabin", "☕", ["Cocoa Mug", "Wool Blanket", "Fire Crackle", "Snowy Pane", "Cabin Beam", "Warm Rug"]],
+  ["Paper Crane Valley", "🕊️", ["Paper Crane", "Thousand Fold", "Wing Crease", "Soft Wind", "Hill Shrine", "Quiet Flight"]],
+  ["Mulberry Mill", "🏡", ["Mill Wheel", "Flour Sack", "Mulberry", "Stone Grind", "Creek Splash", "Wooden Gear"]],
+  ["Starlit Ferris Wheel", "🎡", ["Wheel Light", "Top Seat", "Night Fair", "Rusty Bolt", "Soft Sway", "City Glow"]],
+  ["Cinder Meadow", "🌋", ["Warm Ash", "Black Soil", "First Sprout", "Ember Seed", "Hot Stone", "Green Return"]],
+  ["Seashell Symphony", "🎼", ["Shell Horn", "Wave Chord", "Pearl Note", "Tide Beat", "Sea Hum", "Sand Rest"]],
+  ["Lemon Grove Lane", "🍋", ["Lemon", "Zest", "Sunny Bough", "Tin Bucket", "Dry Wall", "Bright Scent"]],
+  ["Northern Lantern Road", "🧭", ["Road Lantern", "Snow Track", "Aurora Bend", "Pine Post", "Frost Glow", "Long Way"]],
+  ["Heartwood Hollow", "🪵", ["Heartwood", "Old Ring", "Mossy Root", "Owl Nest", "Deep Bark", "Rest Place"]],
+  ["Silkworm Studio", "🧶", ["Silk Thread", "Loom", "Dye Pot", "Soft Bolt", "Spindle", "Woven Light"]],
+  ["Wishing Star Pier", "⭐", ["Wish Pier", "Star Coin", "Night Rail", "Ocean Hush", "Bench Light", "Far Boat"]],
+  ["Everlight Gardens", "🌷", ["Everlight", "Tulip Row", "Gentle Fountain", "Stone Bench", "Soft Petal", "Quiet Gate"]],
+  ["Lullaby Lagoon", "🌙", ["Soft Ripple", "Moon Dock", "Sleepy Frog", "Lily Pad", "Night Reed", "Still Water"]],
+  ["Welcome Light Village", "🏘️", ["Porch Lamp", "Garden Wall", "Bakery Smell", "Friendly Wave", "Evening Bell", "Cobble Lane"]],
+  ["The Long Way Home", "🛤️", ["Open Gate", "Familiar Lane", "Porch Step", "Warm Window", "Old Key", "Welcome Light"]],
+  ["Home, Always", "🏠", ["Doorway", "Kitchen Hum", "Shared Laugh", "Cosy Corner", "Our Song", "Lamp Glow"]],
+  ["Two Thousand Tomorrows", "🌟", ["Tomorrow", "Kept Promise", "Brighter Day", "Side By Side", "Open Heart", "New Dawn"]]
+];
+(function addBonusPart5() {
+  function rngSeeded(seed) { let s = seed * 9301 + 49297; return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+  const used = {};
+  LEVELS.forEach(function (l) { used[l.name] = true; });
+  BONUS_CHAPTERS_5.forEach(function (def, ci) {
+    const chapterId = 121 + ci;
+    CHAPTERS.push({ id: chapterId, title: def[0], emoji: def[1], bonus: true });
+    const pairs = [];
+    BONUS_ADJECTIVES.forEach(function (a) { def[2].forEach(function (w) { pairs.push(a + " " + w); }); });
+    const r = rngSeeded(chapterId * 17);
+    for (let i = pairs.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = pairs[i]; pairs[i] = pairs[j]; pairs[j] = t; }
+    let p = 0;
+    for (let i = 0; i < 10; i++) {
+      let name = def[0] + " Finale";
+      if (i < 9) {                                   // pick the next name nobody else already uses
+        while (p < pairs.length && used[pairs[p]]) p++;
+        name = pairs[p++];
+      }
+      used[name] = true;
+      LEVELS.push({ id: 1201 + ci * 10 + i, chapter: chapterId, name: name, goal: 120, moves: 14 });
     }
   });
 })();
